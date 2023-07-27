@@ -1,0 +1,40 @@
+{
+  "name": "qjsc",
+  "version": "0.3.0",
+  "description": "Node.js addon for the Quickjs compiler",
+  "main": "index.js",
+  "bin": {
+    "qjsc": "./bin/qjsc.js"
+  },
+  "scripts": {
+    "install": "node install.js",
+    "test": "jasmine test.js",
+    "build:fix": "node-gyp rebuild --verbose",
+    "build:pre": "prebuildify --napi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openkraken/node-qjsc.git"
+  },
+  "author": "The Kraken Team",
+  "license": "Apache License 2.0",
+  "bugs": {
+    "url": "https://github.com/openkraken/node-qjsc/issues"
+  },
+  "homepage": "https://github.com/openkraken/node-qjsc#readme",
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "commander": "^8.2.0",
+    "nan": "^2.15.0",
+    "node-addon-api": "^4.1.0",
+    "node-gyp": "^9.0.0",
+    "node-gyp-build": "^4.3.0"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "devDependencies": {
+    "jasmine": "^3.9.0",
+    "prebuildify": "^5.0.0"
+  }
+}
