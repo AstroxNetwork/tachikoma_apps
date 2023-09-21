@@ -22,10 +22,24 @@
     "zip": "tar -zcvf dist.tar.gz dist"
   },
   "dependencies": {
+    "@bitcoinerlab/secp256k1": "^1.0.5",
     "@types/node": "^20.4.5",
+    "animatejs": "^1.0.1",
+    "autoprefixer": "^10.4.14",
+    "bitcoinjs-lib": "^6.1.5",
+    "bs58check": "^3.0.1",
+    "buffer": "^6.0.3",
+    "esbuild": "^0.19.3",
+    "esbuild-plugin-polyfill-node": "^0.3.0",
+    "events": "^3.3.0",
+    "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "vite-plugin-html": "^3.2.0"
+    "rpc-websockets": "^7.6.0",
+    "universal-transition": "^1.1.1",
+    "util": "^0.12.5",
+    "vite-plugin-html": "^3.2.0",
+    "vite-plugin-node-polyfills": "^0.14.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
@@ -33,14 +47,11 @@
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react-swc": "^3.3.2",
-    "@bitcoinerlab/secp256k1": "^1.0.5",
-    "animatejs": "^1.0.1",
-    "autoprefixer": "^10.4.14",
-    "bitcoinjs-lib": "^6.1.5",
-    "bs58check": "^3.0.1",
+    "ecpair": "^2.1.0",
     "eslint": "^8.45.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
+    "js-sha256": "^0.10.1",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"
   }
