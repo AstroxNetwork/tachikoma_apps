@@ -1,14 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 import './App.css';
 import { ElectrumApi } from './clients/eletrum';
 import { AtomicalService } from './services/atomical';
-import { IAtomicalBalances } from './interfaces/api';
+import { IAtomicalBalances, ISelectedUtxo } from './interfaces/api';
 import Modal from './components/Modal';
+import { AstroXWizzInhouseProvider } from 'webf_wizz_inhouse';
+import { fromPubToP2tr, toXOnly } from './clients/utils';
+import { showToast } from '@uni/toast';
+import { Transfer } from './Transfer';
+import { Overlay, Popup } from 'react-vant';
 
-function handleAddress(address: string): string {
-  return `${address.substring(0, 6)}...${address.substring(address.length - 6, address.length)}`;
+const provider = new AstroXWizzInhouseProvider();
+
+export function handleAddress(address: string, padding: number = 6): string {
+  return `${address.substring(0, padding)}...${address.substring(address.length - padding, address.length)}`;
 }
 
 function App() {
@@ -23,25 +30,71 @@ function App() {
   const [balanceMap, setBalanceMap] = useState<IAtomicalBalances | undefined>(undefined);
   const [visible, setVisible] = useState(false);
   const [modalContent, setModalContent] = useState<string | undefined>(undefined);
+  const [atomUtxos, setAtomUtxos] = useState<ISelectedUtxo[]>([]);
+  const [relatedUtxos, setRelatedUtxos] = useState<ISelectedUtxo[]>([]);
+  const [relatedAtomicalId, setRelatedAtomicalId] = useState<string | undefined>(undefined);
+  const [relatedConfirmed, setRelatedConfirmed] = useState<number | undefined>(undefined);
+  const [relatedType, setRelatedType] = useState<'FT' | 'NFT' | undefined>(undefined);
+  const [relatedTicker, setRelatedTicker] = useState<string | undefined>(undefined);
+  const [xOnlyPubHex, setXonlyPubHex] = useState<string | undefined>(undefined);
 
   const getWalletInfo = async () => {
-    const addr = 'bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv';
-    setAddress(addr);
-    await api.open();
-    console.log(api.isOpen());
-    const walletInfo = await service.walletInfo(addr, false);
-    console.log(walletInfo);
-    const { data } = walletInfo;
-    const { atomicals_confirmed, atomicals_balances } = data;
-    setBalance(atomicals_confirmed);
-    setBalanceMap(atomicals_balances as IAtomicalBalances);
+    // const addr = await getAddress();
+    if (address) {
+      await api.open();
+      const walletInfo = await service.walletInfo(address, false);
+      const { data } = walletInfo;
+      const { atomicals_confirmed, atomicals_balances, atomicals_utxos } = data;
+      console.log(data);
+      console.log({ atomicals_confirmed });
+      setBalance(atomicals_confirmed);
+      setBalanceMap(atomicals_balances as IAtomicalBalances);
+      if (atomicals_utxos.length > 0) {
+        setAtomUtxos(atomicals_utxos);
+      }
+    }
+  };
+
+  const handleUtxos = (expect_id: string) => {
+    const utxos = [];
+    if (atomUtxos.length > 0) {
+      for (let i = 0; i < atomUtxos.length; i += 1) {
+        const utxo = atomUtxos[i];
+        if (utxo.atomicals.length === 1) {
+          const atomicalId = utxo.atomicals[0];
+          if (atomicalId === expect_id) {
+            utxos.push(utxo);
+          }
+        } else {
+          break;
+        }
+      }
+    }
+    return utxos;
+  };
+
+  const getAddress = async () => {
+    // const accs = await provider.requestAccounts();
+    // const p2trPub = await provider.getPublicKey(accs[0]);
+    // const xpub = (toXOnly(Buffer.from(p2trPub, 'hex')) as Buffer).toString('hex');
+    setXonlyPubHex('133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b');
+    const p2trAddress = 'bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'; //fromPubToP2tr(p2trPub);
+    setAddress(p2trAddress);
+
+    return p2trAddress;
   };
 
   useEffect(() => {
-    (async () => {
-      await getWalletInfo();
-    })();
-  }, []);
+    if (address === undefined) {
+      (async () => {
+        await getAddress();
+      })();
+    } else {
+      (async () => {
+        await getWalletInfo();
+      })();
+    }
+  }, [address]);
 
   const handleBalanceMap = () => {
     if (balanceMap) {
@@ -58,9 +111,17 @@ function App() {
               display: 'flex',
               borderBottom: '1px solid #e5e7eb',
               color: '#fff',
-              fontSize: 32,
+              fontSize: 18,
             }}
             onTouchEnd={() => {
+              console.log({ id: data.atomical_id });
+              setRelatedAtomicalId(data.atomical_id);
+              setRelatedConfirmed(data.confirmed);
+              setRelatedType(data.type);
+              setRelatedTicker(data.ticker);
+              const utxos = handleUtxos(data.atomical_id);
+              console.log({ utxos });
+              setRelatedUtxos(utxos);
               setVisible(true);
               setModalContent('Transaction will be implemented soon');
             }}
@@ -76,7 +137,7 @@ function App() {
 
   return (
     <>
-      <div style={{ minWidth: 600, width: '100%' }}>
+      <div style={{ minWidth: 320, width: '100%' }}>
         <section
           style={{
             display: 'flex',
@@ -98,7 +159,17 @@ function App() {
               flex: 1,
             }}
           >
-            <div style={{ padding: 16, borderRadius: 16, backgroundColor: '#000', marginRight: 16 }}>{address ? handleAddress(address) : '...'}</div>
+            <div
+              style={{ padding: 16, borderRadius: 16, backgroundColor: '#000', marginRight: 16 }}
+              onTouchEnd={() => {
+                if (address && address !== '') {
+                  window.navigator.clipboard.writeText(address);
+                  showToast('Copy Success');
+                }
+              }}
+            >
+              {address ? handleAddress(address) : '...'}
+            </div>
             <div style={{ padding: 16, borderRadius: 16, backgroundColor: '#000' }}>Tokens</div>
           </div>
         </section>
@@ -115,6 +186,7 @@ function App() {
             {balance ?? '---'}
           </div>
         </section>
+
         <section
           style={{
             backgroundColor: '#1e1f25',
@@ -130,27 +202,54 @@ function App() {
         visible={visible}
         onHide={() => {
           console.log('hide');
+          setRelatedUtxos([]);
+          setRelatedAtomicalId(undefined);
+          setRelatedConfirmed(undefined);
         }}
         onShow={() => {
           console.log('show');
+          console.log({ relatedUtxos });
         }}
         onMaskClick={() => {
-          setVisible(false);
+          // setVisible(false);
         }}
         contentStyle={{
           position: 'absolute',
           // top: '150rpx',
           // left: '0',
           // minWidth: '100%',
-          width: '300rpx',
+          minWidth: '300rpx',
           padding: '32rpx',
           color: '#000',
           left: '50%',
           top: '50%',
+          height: '1000rpx',
           transform: `translate(-50%,-50%)`,
+          backgroundColor: '#242424',
         }}
       >
-        <p>{modalContent ?? '---'}</p>
+        <div
+          style={{
+            display: 'flex',
+            flex: 1,
+          }}
+        >
+          {relatedAtomicalId ? (
+            <Transfer
+              primaryAddress={address!}
+              xonlyPubHex={xOnlyPubHex!}
+              relatedAtomicalId={relatedAtomicalId!}
+              relatedUtxos={relatedUtxos}
+              relatedConfirmed={relatedConfirmed!}
+              relatedType={relatedType!}
+              relatedTicker={relatedTicker!}
+              service={service}
+              setVisible={() => {
+                setVisible(false);
+              }}
+            />
+          ) : null}
+        </div>
       </Modal>
     </>
   );

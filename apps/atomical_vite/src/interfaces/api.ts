@@ -57,6 +57,7 @@ export interface ISelectedUtxo {
   txid: string;
   index: number;
   value: number;
+  height: number;
   script: any;
   atomicals: string[];
 }
@@ -74,6 +75,7 @@ export interface IAtomicalsInfo {
     script: any;
     value: number;
     index: number;
+    height: number;
   }>;
 }
 

@@ -3,7 +3,11 @@ import { detectAddressTypeToScripthash } from '../clients/utils';
 import { ElectrumApiInterface, IAtomicalBalanceSummary } from '../interfaces/api';
 
 export class AtomicalService {
-  constructor(private electrumApi: ElectrumApiInterface) {}
+  constructor(public electrumApi: ElectrumApiInterface) {}
+
+  async ensureService() {
+    await this.electrumApi.open();
+  }
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {
     const { scripthash } = detectAddressTypeToScripthash(address);

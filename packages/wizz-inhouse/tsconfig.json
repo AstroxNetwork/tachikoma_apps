@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+      "baseUrl": "./",
+      "rootDir": "src",
+      "module": "ESNext",
+      "target": "ES2020",
+      "lib": [
+        "ESNext",
+        "dom",
+      ],
+      "sourceMap": false,
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "resolveJsonModule": true,
+      "skipLibCheck": true,
+      "importHelpers": true,
+      "allowJs": true
+    },
+    "include": [
+      "src",
+      "**/*.ts",
+      "**/*.d.ts"
+    ]
+}

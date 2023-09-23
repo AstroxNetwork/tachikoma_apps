@@ -54,3 +54,15 @@ export function addressToP2PKH(address: string): string {
   const p2pkh = `76a914${addressDecodedSub}88ac`;
   return p2pkh;
 }
+
+export const toXOnly = publicKey => {
+  return publicKey.slice(1, 33);
+};
+
+export function fromPubToP2tr(pub: string): string {
+  const childNodeXOnlyPubkeyPrimary = toXOnly(Buffer.from(pub, 'hex'));
+  const p2trPrimary = bitcoin.payments.p2tr({
+    internalPubkey: childNodeXOnlyPubkeyPrimary,
+  });
+  return p2trPrimary.address;
+}

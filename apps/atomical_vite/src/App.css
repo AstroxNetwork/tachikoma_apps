@@ -1,7 +1,6 @@
 #root {
   max-width: 100%;
   margin: 0 auto;
-
   text-align: center;
 }
 
@@ -39,4 +38,14 @@
 
 .read-the-docs {
   color: #888;
+}
+
+input {
+  width: 100%;
+  padding: 16px 0px;
+  outline: 0;
+  border: 0;
+  background-color: transparent;
+  font-size: 16px;
+  line-height: 32px;
 }
