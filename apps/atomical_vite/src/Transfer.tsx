@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, CSSProperties } from 'react';
 import { handleAddress } from './App';
 import { AmountToSend, IAtomicalsInfo, ISelectedUtxo } from './interfaces/api';
 import { AtomicalService } from './services/atomical';
@@ -9,6 +9,8 @@ import ECPairFactory from 'ecpair';
 import ecc from '@bitcoinerlab/secp256k1';
 import { Buffer } from 'buffer';
 import { UTXO } from './interfaces/utxo';
+import { AstroXWizzInhouseProvider } from 'webf_wizz_inhouse';
+import { showToast } from '@uni/toast';
 
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
@@ -19,8 +21,20 @@ export interface TransferFtConfigInterface {
   outputs: Array<AmountToSend>;
 }
 
+export enum TransferStatus {
+  None,
+  Sending,
+  Success,
+  Failed,
+}
+
+const flexCenter = { display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', flex: 1, padding: 32 };
+
 export const Transfer = ({
+  originAddress,
   primaryAddress,
+  fundingBalance,
+  nonAtomUtxos,
   xonlyPubHex,
   relatedAtomicalId,
   relatedUtxos,
@@ -29,14 +43,19 @@ export const Transfer = ({
   relatedConfirmed,
   service,
   setVisible,
+  provider,
 }: {
+  originAddress?: string;
   primaryAddress?: string;
+  fundingBalance?: number;
+  nonAtomUtxos?: UTXO[];
   xonlyPubHex?: string;
   relatedAtomicalId?: string;
   relatedUtxos: ISelectedUtxo[];
   relatedType: 'FT' | 'NFT';
   relatedConfirmed?: number;
   relatedTicker?: string;
+  provider?: AstroXWizzInhouseProvider;
   service: AtomicalService;
   setVisible: Function;
 }) => {
@@ -52,6 +71,14 @@ export const Transfer = ({
   const [sendAddressOk, setSendAddressOk] = useState<boolean>(false);
   const [amountToSendNext, setAmountToSendNext] = useState<AmountToSend[]>([]);
   const [selectedUtxos, setSelectedUtxos] = useState<ISelectedUtxo[]>([]);
+  const [expectedFunding, setExpectedFundinng] = useState<number>(0);
+
+  // sign and send
+  const [signedSuccess, setSignedSuccess] = useState<boolean>(false);
+  const [signedTx, setSignedTx] = useState<string | undefined>(undefined);
+  const [txStatus, setTxStatus] = useState<TransferStatus>(TransferStatus.None);
+  const [txId, setTxId] = useState<string | undefined>(undefined);
+  const [unsendId, setUnsendId] = useState<string | undefined>(undefined);
 
   const utxoList = () => {
     return relatedUtxos
@@ -70,10 +97,10 @@ export const Transfer = ({
               paddingBottom: 8,
               margin: 0,
             }}
-            onClick={() => {
+            onClick={async () => {
               let sel = !selected ? [...selectedTxIDs, utxo.txid] : selectedTxIDs.filter(id => id !== utxo.txid);
               setSelectedTxIDs(sel);
-              handleSelectedAmount(sel);
+              await handleSelectedAmount(sel);
             }}
           >
             <span>{selected ? `✅` : `🔳`}</span>
@@ -102,7 +129,7 @@ export const Transfer = ({
     // });
   }
 
-  function handleSelectedAmount(ids: string[]) {
+  async function handleSelectedAmount(ids: string[]) {
     let selectedValue = 0;
     let selectedUtxos: ISelectedUtxo[] = [];
     for (let i = 0; i < ids.length; i += 1) {
@@ -121,6 +148,24 @@ export const Transfer = ({
     } else {
       setSendAmountOk(false);
     }
+
+    const amountsToSend: AmountToSend[] = [];
+    amountsToSend.push({
+      address: sendAddress,
+      value: selectedValue,
+    });
+
+    const obj: TransferFtConfigInterface = {
+      atomicalsInfo: {
+        confirmed: relatedConfirmed,
+        type: relatedType,
+        utxos: relatedUtxos,
+      },
+      selectedUtxos,
+      outputs: amountsToSend,
+    };
+
+    await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, true);
   }
 
   //   function validateInput(inputVal: number): boolean {
@@ -152,20 +197,41 @@ export const Transfer = ({
       outputs: amountToSendNext,
     };
 
-    console.log({ obj });
-    await buildAndSendTransaction(obj, sendAddress, xonlyPubHex, 20);
+    const txHex = await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, false);
+
+    if (txHex) {
+      setTxStatus(TransferStatus.Sending);
+      try {
+        const txId = await service.electrumApi.broadcast(txHex);
+        if (typeof txId !== 'string') {
+          throw 'txId is not string';
+        }
+        if (txId !== unsendId) {
+          console.log('txId is not same');
+        }
+        console.log({ txId });
+        setTxId(txId);
+        setTxStatus(TransferStatus.Success);
+      } catch (error) {
+        console.log({ error });
+        setTxStatus(TransferStatus.Failed);
+      }
+      // signed success, continue sending
+    } else {
+      console.log('dispatch signing error');
+    }
   }
 
-  async function buildAndSendTransaction(
+  async function buildAndSignTx(
     transferOptions: TransferFtConfigInterface,
     address: string,
     xonlyPubkey: string,
     satsbyte: number,
-  ): Promise<any> {
+    preload: boolean,
+  ): Promise<string | undefined> {
     if (transferOptions.atomicalsInfo.type !== 'FT') {
       throw 'Atomical is not an FT. It is expected to be an FT type';
     }
-
     const psbt = new bitcoin.Psbt({ network: bitcoin.networks.bitcoin });
     let tokenBalanceIn = 0;
     let tokenBalanceOut = 0;
@@ -173,22 +239,27 @@ export const Transfer = ({
     let tokenOutputsLength = 0;
     for (const utxo of transferOptions.selectedUtxos) {
       // Add the atomical input, the value from the input counts towards the total satoshi amount required
-      const { output } = detectAddressTypeToScripthash(address);
-      psbt.addInput({
-        hash: utxo.txid,
-        index: utxo.index,
-        witnessUtxo: { value: utxo.value, script: Buffer.from(output as string, 'hex') },
-        tapInternalKey: Buffer.from(xonlyPubkey, 'hex'),
-      });
+      if (!preload) {
+        const { output } = detectAddressTypeToScripthash(address);
+        psbt.addInput({
+          hash: utxo.txid,
+          index: utxo.index,
+          witnessUtxo: { value: utxo.value, script: Buffer.from(output as string, 'hex') },
+          tapInternalKey: Buffer.from(xonlyPubkey, 'hex'),
+        });
+      }
+
       tokenBalanceIn += utxo.value;
       tokenInputsLength++;
     }
 
     for (const output of transferOptions.outputs) {
-      psbt.addOutput({
-        value: output.value,
-        address: output.address,
-      });
+      if (!preload) {
+        psbt.addOutput({
+          value: output.value,
+          address: output.address,
+        });
+      }
       tokenBalanceOut += output.value;
       tokenOutputsLength++;
     }
@@ -203,80 +274,160 @@ export const Transfer = ({
     if (expectedSatoshisDeposit <= 546) {
       console.log('Invalid expectedSatoshisDeposit. Developer Error.');
     }
-    console.log(expectedSatoshisDeposit);
 
-    const allUtxos = await service.electrumApi.getUnspentAddress(address);
-    console.log(allUtxos);
-    const nonAtomUtxos: UTXO[] = [];
-    for (let i = 0; i < allUtxos.utxos.length; i++) {
-      const utxo = allUtxos.utxos[i];
-      if (transferOptions.atomicalsInfo.utxos.findIndex(item => item.txid === utxo.txid) < 0) {
-        nonAtomUtxos.push(utxo);
+    if (preload) {
+      setExpectedFundinng(expectedSatoshisDeposit);
+    }
+    // add nonAtomUtxos least to expected deposit value
+
+    if (!preload) {
+      let addedValue = 0;
+      let addedInputs: UTXO[] = [];
+
+      for (let i = 0; i <= nonAtomUtxos.length; i += 1) {
+        const utxo = nonAtomUtxos[i];
+
+        if (addedValue >= expectedSatoshisDeposit) {
+          break;
+        } else {
+          addedValue += utxo.value;
+          addedInputs.push(utxo);
+          const { output } = detectAddressTypeToScripthash(address);
+          psbt.addInput({
+            hash: utxo.txid,
+            index: utxo.outputIndex,
+            witnessUtxo: { value: utxo.value, script: Buffer.from(output as string, 'hex') },
+            tapInternalKey: Buffer.from(xonlyPubkey, 'hex'),
+          });
+        }
+      }
+      console.log(addedValue);
+      console.log(addedInputs);
+
+      if (addedValue - expectedSatoshisDeposit >= 546) {
+        psbt.addOutput({
+          value: addedValue - expectedSatoshisDeposit,
+          address: primaryAddress,
+        });
+      }
+      const printedPsbt = psbt.toHex();
+      console.log(printedPsbt);
+
+      try {
+        const s = await provider.signPsbt(originAddress, printedPsbt, { addressType: 'p2pkhtr' });
+        console.log({ s });
+        const signedPsbt = bitcoin.Psbt.fromHex(s);
+        // signedPsbt.finalizeAllInputs();
+        const tx = signedPsbt.extractTransaction();
+        console.log(tx.toHex());
+        setUnsendId(tx.getId());
+        return tx.toHex();
+      } catch (error) {
+        console.log(error);
+        return undefined;
       }
     }
-    console.log(nonAtomUtxos);
-
-    // logBanner(`DEPOSIT ${expectedSatoshisDeposit / 100000000} BTC to ${keyPairFunding.address}`);
-    // qrcode.generate(keyPairFunding.address, { small: false });
-    // console.log(`...`);
-    // console.log(`...`);
-    // console.log(`WAITING UNTIL ${expectedSatoshisDeposit / 100000000} BTC RECEIVED AT ${keyPairFunding.address}`);
-    // console.log(`...`);
-    // console.log(`...`);
-    // let utxo = await this.electrumApi.waitUntilUTXO(keyPairFunding.address, expectedSatoshisDeposit, 5, false);
-    // console.log(`Detected UTXO (${utxo.txid}:${utxo.vout}) with value ${utxo.value} for funding the transfer operation...`);
-    // // Add the funding input
-    // psbt.addInput({
-    //   hash: utxo.txid,
-    //   index: utxo.outputIndex,
-    //   witnessUtxo: { value: utxo.value, script: keyPairFunding.output },
-    //   tapInternalKey: keyPairFunding.childNodeXOnlyPubkey,
-    // });
-    // const isMoreThanDustChangeRemaining = utxo.value - expectedSatoshisDeposit >= 546;
-    // if (isMoreThanDustChangeRemaining) {
-    //   // Add change output
-    //   console.log(`Adding change output, remaining: ${utxo.value - expectedSatoshisDeposit}`);
-    //   psbt.addOutput({
-    //     value: utxo.value - expectedSatoshisDeposit,
-    //     address: keyPairFunding.address,
-    //   });
-    // }
-    // let i = 0;
-    // for (i = 0; i < tokenInputsLength; i++) {
-    //   console.log(`Signing Atomical input ${i}...`);
-    //   psbt.signInput(i, keyPairAtomical.tweakedChildNode);
-    // }
-    // // Sign the final funding input
-    // console.log('Signing funding input...');
-    // psbt.signInput(i, keyPairFunding.tweakedChildNode);
-
-    // psbt.finalizeAllInputs();
-    // const tx = psbt.extractTransaction();
-
-    // const rawtx = tx.toHex();
-    // await jsonFileWriter(`transfer_txs/${tx.getId()}.json`, {
-    //   rawtx,
-    // });
-
-    // console.log(`Constructed Atomicals FT Transfer, attempting to broadcast: ${tx.getId()}`);
-    // console.log(`Saved raw transaction to: transfer_txs/${tx.getId()}.json`);
-    // await jsonFileWriter(`transfer_txs/${tx.getId()}.json`, {
-    //   rawtx,
-    // });
-    // let broadcastedTxId = await this.electrumApi.broadcast(rawtx);
-    // console.log(`Success!`);
-    // return {
-    //   success: true,
-    //   data: { txid: broadcastedTxId },
-    // };
   }
+
+  const submitTing = () => (
+    <>
+      <div style={{ marginTop: 32, marginBottom: 16 }}>Confirm Tx Detail</div>
+      <div style={{ textAlign: 'left' }}>Address:</div>
+      <div style={{ textAlign: 'left' }}>{sendAddress}</div>
+      <div style={{ textAlign: 'left', marginTop: 24 }}>Amount:</div>
+      <div style={{ textAlign: 'left', marginBottom: 32 }}>{sendAmount}</div>
+      <div
+        style={{
+          height: 48,
+          width: '100%',
+          backgroundColor: '#3399ff',
+          borderRadius: 24,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          color: '#fff',
+        }}
+        onTouchEnd={async () => {
+          console.log('submit');
+          await handleSubmit();
+        }}
+      >
+        Submit
+      </div>
+    </>
+  );
+
+  const sendAndLoading = ({ status, txId }: { status: TransferStatus; txId?: string }) => {
+    let comp;
+    switch (status) {
+      case TransferStatus.Sending:
+        comp = (
+          <div style={flexCenter as CSSProperties}>
+            <h3 style={{ marginTop: 32, marginBottom: 32 }}>Sending ... </h3>
+          </div>
+        );
+        break;
+      case TransferStatus.Failed:
+        comp = (
+          <div style={flexCenter as CSSProperties}>
+            <h3 style={{ marginTop: 32, marginBottom: 32 }}>Transaction Failed! </h3>
+            <div
+              style={{
+                fontSize: 16,
+                backgroundColor: '#ff3399',
+                borderRadius: 24,
+                padding: 24,
+                width: '100%',
+              }}
+              onTouchEnd={() => {
+                window.navigator.clipboard.writeText(unsendId || '');
+                showToast('Copy Success');
+              }}
+            >
+              {`Copy TxID: ${handleAddress(unsendId, 6)}`}
+            </div>
+          </div>
+        );
+        break;
+      case TransferStatus.Success:
+        comp = (
+          <div style={flexCenter as CSSProperties}>
+            <h3 style={{ marginTop: 32, marginBottom: 32 }}>Transaction Success! </h3>
+            <div
+              style={{
+                fontSize: 16,
+                backgroundColor: '#3399ff',
+                borderRadius: 24,
+                padding: 24,
+                width: '100%',
+              }}
+              onTouchEnd={() => {
+                window.navigator.clipboard.writeText(txId || '');
+                showToast('Copy Success');
+              }}
+            >
+              {`Copy TxID: ${handleAddress(txId, 6)}`}
+            </div>
+          </div>
+        );
+        break;
+      case TransferStatus.None:
+        comp = submitTing();
+        break;
+      default:
+        comp = submitTing();
+        break;
+    }
+
+    return <div>{comp}</div>;
+  };
 
   return (
     <div style={{ color: '#fff', width: '100%', position: 'relative' }}>
       <div style={{ position: 'absolute', top: 0, left: 0 }}>
         <div
-          style={{ fontSize: 16, color: '#fff' }}
-          onClick={() => {
+          style={{ fontSize: 16, color: '#fff', padding: 8 }}
+          onTouchStart={() => {
             setVisible();
           }}
         >
@@ -286,8 +437,8 @@ export const Transfer = ({
       {amountToSendNext.length === 0 ? (
         <div style={{ position: 'absolute', top: 0, right: 0 }}>
           <div
-            style={{ fontSize: 16, color: !sendAddressOk || !sendAmountOk ? '#999' : '#3399ff' }}
-            onClick={() => {
+            style={{ fontSize: 16, color: !sendAddressOk || !sendAmountOk ? '#999' : '#3399ff', padding: 8 }}
+            onTouchStart={() => {
               if (!sendAddressOk || !sendAmountOk) return;
               else {
                 console.log({ sendAddress, sendAmount });
@@ -305,13 +456,14 @@ export const Transfer = ({
         </div>
       ) : null}
 
-      <div>Transfer {`  \$${relatedTicker.toLocaleUpperCase()}` ?? ''}</div>
+      <div style={{ padding: 8 }}>Transfer {`  \$${relatedTicker.toLocaleUpperCase()}` ?? ''}</div>
 
       {amountToSendNext.length === 0 ? (
         <>
           <div
             style={{
               fontSize: 24,
+              marginTop: 32,
               borderBottom: '1px solid #fff',
               marginBottom: 16,
               display: 'flex',
@@ -321,7 +473,7 @@ export const Transfer = ({
               flex: 1,
             }}
           >
-            <input ref={addressInput} placeholder="Address" type="text" value={sendAddress} />
+            <input ref={addressInput} placeholder="Address" type="text" value={sendAddress} style={{ color: '#ff9933' }} />
             <div
               style={{
                 color: '#3399ff',
@@ -342,35 +494,52 @@ export const Transfer = ({
             </div>
           </div>
           {sendAddressError && <div style={{ color: '#ff3399' }}>{sendAddressError}</div>}
-          <div style={{ fontSize: 16, marginBottom: 16, paddingBottom: 16 }}>
-            <span style={{ marginRight: 32 }}>Selected {relatedTicker.toUpperCase()}: </span>
-            <span style={{ color: '#ff3399' }}>{selectedAmount}</span>
+          <div
+            style={{
+              fontSize: 16,
+              marginBottom: 8,
+              paddingBottom: 8,
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span style={{ marginRight: 32 }}>BTC Balance: </span>
+            <span style={{ color: '#ffffff' }}>{fundingBalance} sats</span>
           </div>
-          <div style={{ fontSize: 16, marginBottom: 16, paddingBottom: 16 }}>
+          <div
+            style={{
+              fontSize: 16,
+              marginBottom: 8,
+              paddingBottom: 8,
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span style={{ marginRight: 32 }}>GAS Cost: </span>
+            <span style={{ color: expectedFunding > fundingBalance ? '#ff3399' : '#ffffff' }}>{expectedFunding} sats</span>
+          </div>
+          <div
+            style={{
+              fontSize: 16,
+              marginBottom: 16,
+              paddingBottom: 16,
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <span style={{ marginRight: 32 }}>Selected {relatedTicker.toUpperCase()}: </span>
-            <span style={{ color: '#ff3399' }}>{selectedAmount}</span>
+            <span style={{ color: expectedFunding > fundingBalance ? '#ff3399' : '#ffffff' }}>{selectedAmount}</span>
           </div>
           <ul style={{ margin: 0, padding: 0 }}>{utxoList()}</ul>
         </>
       ) : (
-        <>
-          <div style={{ marginTop: 32, marginBottom: 16 }}>Confirm Tx Detail</div>
-          <div style={{ textAlign: 'left' }}>Address:</div>
-          <div style={{ textAlign: 'left' }}>{sendAddress}</div>
-          <div style={{ textAlign: 'left', marginTop: 24 }}>Amount:</div>
-          <div style={{ textAlign: 'left', marginBottom: 32 }}>{sendAmount}</div>
-          <Button
-            round
-            nativeType="submit"
-            type="primary"
-            block
-            onClick={async () => {
-              await handleSubmit();
-            }}
-          >
-            Submit
-          </Button>
-        </>
+        sendAndLoading({ status: txStatus, txId: txId })
       )}
     </div>
   );

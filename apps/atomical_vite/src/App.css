@@ -45,7 +45,8 @@ input {
   padding: 16px 0px;
   outline: 0;
   border: 0;
-  background-color: transparent;
+  color: #ff9933;
+  background: none;
   font-size: 16px;
   line-height: 32px;
 }
