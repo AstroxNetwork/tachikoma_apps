@@ -16,6 +16,9 @@ interface WizzInhouseProvider {
   // Connect the current account.
   requestAccounts(): Promise<string[]>;
 
+  // Get an address type, return null if the address is invalid
+  getAddressType(address: string): Promise<string | null>;
+
   // Get current account PublicKey
   getPublicKey(address: string): Promise<string>;
 
@@ -90,7 +93,11 @@ export class AstroXWizzInhouseProvider implements WizzInhouseProvider {
     return this.f('inscribe', payload);
   }
 
-  readonly #moduleName = 'wizz_inhouse';
+  readonly #moduleName: string;
+
+  constructor() {
+    this.#moduleName = 'wizz_inhouse';
+  }
 
   private f<T>(method: string, ...params: unknown[]): Promise<T> {
     return (globalThis as any).callf(this.#moduleName, method, ...params);
@@ -134,5 +141,9 @@ export class AstroXWizzInhouseProvider implements WizzInhouseProvider {
 
   sendInscriptions(fromAddress: string, toAddress: string, inscriptionIds: string[], options?: SendInscriptionOption): Promise<string> {
     return this.f('sendInscriptions', { fromAddress, toAddress, inscriptionIds, options });
+  }
+
+  getAddressType(address: string): Promise<string | null> {
+    return this.f('getAddressType', address);
   }
 }

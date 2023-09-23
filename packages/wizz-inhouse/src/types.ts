@@ -24,6 +24,7 @@ export interface SendInscriptionOption {
 
 export interface SignOptions {
   autoFinalized?: boolean;
+  addressType?: 'p2tr' | 'p2wpkh' | 'p2sh' | 'p2pkh' | 'p2pkhtr';
 }
 
 export interface InscriptionsResponse {
