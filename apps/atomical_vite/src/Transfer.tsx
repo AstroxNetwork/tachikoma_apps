@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, CSSProperties } from 'react';
 import { handleAddress } from './App';
 import { AmountToSend, IAtomicalsInfo, ISelectedUtxo } from './interfaces/api';
 import { AtomicalService } from './services/atomical';
-import { PullRefresh, List, Tabs, Cell, Divider, Button } from 'react-vant';
+import { PullRefresh, List, Tabs, Cell, Divider, Switch } from 'react-vant';
 import { detectAddressTypeToScripthash } from './clients/utils';
 import * as bitcoin from 'bitcoinjs-lib';
 import ECPairFactory from 'ecpair';
@@ -72,13 +72,16 @@ export const Transfer = ({
   const [amountToSendNext, setAmountToSendNext] = useState<AmountToSend[]>([]);
   const [selectedUtxos, setSelectedUtxos] = useState<ISelectedUtxo[]>([]);
   const [expectedFunding, setExpectedFundinng] = useState<number>(0);
+  const [mergeValue, setMergeValue] = useState<boolean>(false);
 
   // sign and send
   const [signedSuccess, setSignedSuccess] = useState<boolean>(false);
   const [signedTx, setSignedTx] = useState<string | undefined>(undefined);
   const [txStatus, setTxStatus] = useState<TransferStatus>(TransferStatus.None);
+  const [txMessage, setTxMessage] = useState<string | undefined>(undefined);
   const [txId, setTxId] = useState<string | undefined>(undefined);
   const [unsendId, setUnsendId] = useState<string | undefined>(undefined);
+  const [toConfirm, setToConfirm] = useState<boolean>(false);
 
   const utxoList = () => {
     return relatedUtxos
@@ -132,12 +135,19 @@ export const Transfer = ({
   async function handleSelectedAmount(ids: string[]) {
     let selectedValue = 0;
     let selectedUtxos: ISelectedUtxo[] = [];
+    let _amountsToSend: AmountToSend[] = [];
     for (let i = 0; i < ids.length; i += 1) {
       const selcted = ids[i];
       const found = relatedUtxos.find(item => item.txid === selcted);
       if (found) {
         selectedValue += found.value;
         selectedUtxos.push(found);
+        if (!mergeValue) {
+          _amountsToSend.push({
+            address: sendAddress,
+            value: found.value,
+          });
+        }
       }
     }
     setSelectedAmount(selectedValue);
@@ -149,11 +159,13 @@ export const Transfer = ({
       setSendAmountOk(false);
     }
 
-    const amountsToSend: AmountToSend[] = [];
-    amountsToSend.push({
-      address: sendAddress,
-      value: selectedValue,
-    });
+    if (mergeValue) {
+      _amountsToSend = [];
+      _amountsToSend.push({
+        address: sendAddress,
+        value: selectedValue,
+      });
+    }
 
     const obj: TransferFtConfigInterface = {
       atomicalsInfo: {
@@ -162,8 +174,9 @@ export const Transfer = ({
         utxos: relatedUtxos,
       },
       selectedUtxos,
-      outputs: amountsToSend,
+      outputs: _amountsToSend,
     };
+    setAmountToSendNext(_amountsToSend);
 
     await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, true);
   }
@@ -179,6 +192,7 @@ export const Transfer = ({
   function validateAddress(address: string): boolean {
     try {
       detectAddressTypeToScripthash(address);
+      setSendAddressError(undefined);
       return true;
     } catch (error) {
       setSendAddressError(`Address is not correct`);
@@ -196,7 +210,6 @@ export const Transfer = ({
       selectedUtxos,
       outputs: amountToSendNext,
     };
-
     const txHex = await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, false);
 
     if (txHex) {
@@ -204,16 +217,17 @@ export const Transfer = ({
       try {
         const txId = await service.electrumApi.broadcast(txHex);
         if (typeof txId !== 'string') {
-          throw 'txId is not string';
+          throw new Error('txId is not string');
         }
         if (txId !== unsendId) {
           console.log('txId is not same');
         }
         console.log({ txId });
+        setTxMessage(undefined);
         setTxId(txId);
         setTxStatus(TransferStatus.Success);
       } catch (error) {
-        console.log({ error });
+        setTxMessage((error as Error).message);
         setTxStatus(TransferStatus.Failed);
       }
       // signed success, continue sending
@@ -334,30 +348,65 @@ export const Transfer = ({
     }
   }
 
+  const onMergeValue = async (value: boolean) => {
+    setMergeValue(value);
+    setSelectedTxIDs([]);
+    await handleSelectedAmount([]);
+  };
+
   const submitTing = () => (
     <>
-      <div style={{ marginTop: 32, marginBottom: 16 }}>Confirm Tx Detail</div>
-      <div style={{ textAlign: 'left' }}>Address:</div>
+      <div style={{ textAlign: 'left', marginTop: 32 }}>Address:</div>
       <div style={{ textAlign: 'left' }}>{sendAddress}</div>
       <div style={{ textAlign: 'left', marginTop: 24 }}>Amount:</div>
       <div style={{ textAlign: 'left', marginBottom: 32 }}>{sendAmount}</div>
+      <div style={{ textAlign: 'left', marginTop: 24 }}>Gas Cost:</div>
+      <div style={{ textAlign: 'left', marginBottom: 32 }}>{expectedFunding} sats</div>
+      <div style={{ textAlign: 'left', marginTop: 24 }}>Merge Value:</div>
+      <div style={{ textAlign: 'left', marginBottom: 40, color: mergeValue ? '#3399ff' : '#ff9933' }}>{`${mergeValue}`.toUpperCase()}</div>
       <div
         style={{
-          height: 48,
-          width: '100%',
-          backgroundColor: '#3399ff',
-          borderRadius: 24,
           display: 'flex',
-          justifyContent: 'center',
+          flexDirection: 'row',
+          justifyContent: 'space-evenly',
           alignItems: 'center',
-          color: '#fff',
-        }}
-        onTouchEnd={async () => {
-          console.log('submit');
-          await handleSubmit();
         }}
       >
-        Submit
+        <div
+          style={{
+            height: 60,
+            width: '50%',
+            borderRadius: 8,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: '#ddd',
+          }}
+          onTouchEnd={async () => {
+            console.log('submit');
+            setToConfirm(false);
+          }}
+        >
+          Back
+        </div>
+        <div
+          style={{
+            height: 60,
+            width: '50%',
+            backgroundColor: '#3399ff',
+            borderRadius: 8,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: '#fff',
+          }}
+          onTouchEnd={async () => {
+            console.log('submit');
+            await handleSubmit();
+          }}
+        >
+          Submit
+        </div>
       </div>
     </>
   );
@@ -376,6 +425,7 @@ export const Transfer = ({
         comp = (
           <div style={flexCenter as CSSProperties}>
             <h3 style={{ marginTop: 32, marginBottom: 32 }}>Transaction Failed! </h3>
+            <p style={{ marginTop: 32, marginBottom: 32 }}>{txMessage}</p>
             <div
               style={{
                 fontSize: 16,
@@ -385,11 +435,11 @@ export const Transfer = ({
                 width: '100%',
               }}
               onTouchEnd={() => {
-                window.navigator.clipboard.writeText(unsendId || '');
+                window.navigator.clipboard.writeText(`{errorMessage:${txMessage},txId:${unsendId}}` || '');
                 showToast('Copy Success');
               }}
             >
-              {`Copy TxID: ${handleAddress(unsendId, 6)}`}
+              {`Copy Message And ID: ${handleAddress(unsendId, 6)}`}
             </div>
           </div>
         );
@@ -439,20 +489,14 @@ export const Transfer = ({
           Cancel
         </div>
       </div>
-      {amountToSendNext.length === 0 ? (
+      {toConfirm === false ? (
         <div style={{ position: 'absolute', top: 0, right: 0 }}>
           <div
             style={{ fontSize: 16, color: !sendAddressOk || !sendAmountOk ? '#999' : '#3399ff', padding: 8 }}
             onTouchStart={() => {
               if (!sendAddressOk || !sendAmountOk) return;
               else {
-                console.log({ sendAddress, sendAmount });
-                const amountsToSend: AmountToSend[] = [];
-                amountsToSend.push({
-                  address: sendAddress,
-                  value: sendAmount,
-                });
-                setAmountToSendNext(amountsToSend);
+                setToConfirm(true);
               }
             }}
           >
@@ -463,7 +507,7 @@ export const Transfer = ({
 
       <div style={{ padding: 8 }}>Transfer {`  \$${relatedTicker.toLocaleUpperCase()}` ?? ''}</div>
 
-      {amountToSendNext.length === 0 ? (
+      {toConfirm === false ? (
         <>
           <div
             style={{
@@ -499,6 +543,7 @@ export const Transfer = ({
             </div>
           </div>
           {sendAddressError && <div style={{ color: '#ff3399' }}>{sendAddressError}</div>}
+
           <div
             style={{
               fontSize: 16,
@@ -530,8 +575,8 @@ export const Transfer = ({
           <div
             style={{
               fontSize: 16,
-              marginBottom: 16,
-              paddingBottom: 16,
+              marginBottom: 8,
+              paddingBottom: 8,
               textAlign: 'left',
               display: 'flex',
               justifyContent: 'space-between',
@@ -541,7 +586,22 @@ export const Transfer = ({
             <span style={{ marginRight: 32 }}>Selected {relatedTicker.toUpperCase()}: </span>
             <span style={{ color: expectedFunding > fundingBalance ? '#ff3399' : '#ffffff' }}>{selectedAmount}</span>
           </div>
-          <ul style={{ margin: 0, padding: 0 }}>{utxoList()}</ul>
+          <div
+            style={{
+              display: 'flex',
+              flex: 1,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <span style={{ color: '#fff' }}>Merge Value</span>
+            <Switch size="24px" onChange={onMergeValue} />
+          </div>
+          <div style={{ overflow: 'scroll', height: 220 }}>
+            <ul style={{ margin: 0, padding: 0 }}>{utxoList()}</ul>
+          </div>
         </>
       ) : (
         sendAndLoading({ status: txStatus, txId: txId })

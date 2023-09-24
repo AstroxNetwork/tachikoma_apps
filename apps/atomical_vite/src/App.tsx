@@ -301,12 +301,12 @@ function App() {
           // left: '0',
           // minWidth: '100%',
           minWidth: '300rpx',
-          padding: '32rpx',
+          padding: 0,
           color: '#000',
           left: '50%',
-          top: '50%',
-          height: '1000rpx',
-          transform: `translate(-50%,-50%)`,
+          bottom: '0%',
+          height: '1200rpx',
+          transform: `translate(-50%,0%)`,
           backgroundColor: '#242424',
         }}
       >
@@ -318,6 +318,7 @@ function App() {
             textAlign: 'center',
             justifyContent: 'center',
             alignItems: 'center',
+            padding: '32rpx',
           }}
         >
           {isAllowedAddressType && relatedAtomicalId ? (
