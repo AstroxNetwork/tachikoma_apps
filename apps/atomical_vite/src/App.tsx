@@ -117,7 +117,7 @@ function App() {
     if (address === undefined) {
       (async () => {
         await getAddress();
-        await service.ensureService();
+        // await service.ensureService();
       })();
     } else {
       (async () => {

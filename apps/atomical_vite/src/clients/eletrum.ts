@@ -19,7 +19,11 @@ export class ElectrumApi implements ElectrumApiInterface {
   }
 
   public async resetConnection() {
-    this.ws = new WebSocket(this.url);
+    this.ws = new WebSocket(this.url, { autoconnect: true, reconnect: true, reconnect_interval: 1000, max_reconnects: 10 });
+    this.ws.on('open', event => {
+      this.isOpenFlag = true;
+      console.log('opened');
+    });
     // this.ws.connect();
     // this.open();
   }
