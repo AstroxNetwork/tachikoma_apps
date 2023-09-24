@@ -6,7 +6,11 @@ export class AtomicalService {
   constructor(public electrumApi: ElectrumApiInterface) {}
 
   async ensureService() {
-    await this.electrumApi.open();
+    if (!this.electrumApi.isOpen()) {
+      await this.electrumApi.open();
+    } else {
+      await this.electrumApi.resetConnection();
+    }
   }
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {

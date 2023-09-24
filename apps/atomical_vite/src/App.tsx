@@ -229,6 +229,7 @@ function App() {
               }}
               onTouchEnd={async () => {
                 showToast({ content: 'Balance Updated', type: 'success' });
+                console.log('get wallet');
                 await getWalletInfo();
               }}
             >{`🚀`}</span>

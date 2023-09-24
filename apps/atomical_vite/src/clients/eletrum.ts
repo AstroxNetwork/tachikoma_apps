@@ -14,33 +14,34 @@ export class ElectrumApi implements ElectrumApiInterface {
   private isOpenFlag = false;
   private rpc_id = 0;
 
-  private constructor(private url: string) {
+  private constructor(public url: string) {
     this.resetConnection();
   }
 
   public async resetConnection() {
     this.ws = new WebSocket(this.url);
-    console.log(this.ws);
-    //this.open();
+    // this.ws.connect();
+    // this.open();
   }
 
   static createClient(url: string) {
     return new ElectrumApi(url);
   }
 
-  public async open(): Promise<any> {
-    const p = new Promise((resolve, reject) => {
+  public getUrl(): string {
+    return this.url;
+  }
+
+  public async open(): Promise<boolean | void> {
+    return new Promise((resolve, reject) => {
       if (this.isOpenFlag) {
         resolve(true);
-        return;
       }
-
       this.ws.on('open', event => {
         this.isOpenFlag = true;
         resolve(true);
       });
     });
-    return p;
   }
 
   public isOpen(): boolean {

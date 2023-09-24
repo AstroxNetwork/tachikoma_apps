@@ -273,10 +273,15 @@ export const Transfer = ({
     const { expectedSatoshisDeposit } = calculateFTFundsRequired(transferOptions.selectedUtxos.length, transferOptions.outputs.length, satsbyte, 0);
     if (expectedSatoshisDeposit <= 546) {
       console.log('Invalid expectedSatoshisDeposit. Developer Error.');
+      return undefined;
     }
 
     if (preload) {
-      setExpectedFundinng(expectedSatoshisDeposit);
+      if (transferOptions.selectedUtxos.length === 0) {
+        setExpectedFundinng(0);
+      } else {
+        setExpectedFundinng(expectedSatoshisDeposit);
+      }
     }
     // add nonAtomUtxos least to expected deposit value
 
