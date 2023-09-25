@@ -1,8 +1,8 @@
-import { Button, Collapse } from "antd-mobile";
-import { Modal, Toast } from "@/components";
+import { Collapse, Modal } from "@/components";
 import { useNavigate } from "react-router-dom";
 import { EditSOutline } from "antd-mobile-icons";
 import { useAtomicalWalletInfo } from "@/services/hooks";
+import Selector from "@/components/components/selector";
 const IndexPage = () => {
   const navigate = useNavigate();
   const address =
@@ -22,9 +22,7 @@ const IndexPage = () => {
       content: "asfdafafadfsadf",
     });
   };
-  const toast = () => {
-    Toast.show("ddddddd");
-  };
+
   console.log("balance", balance);
   console.log("atomUtxos", atomUtxos);
   console.log("fundingBalance", fundingBalance);
@@ -36,7 +34,7 @@ const IndexPage = () => {
     <div className="app-container">
       <div className="app-header">
         <div className="bg-card-bg w-full p-4 rounded-md mt-4">
-          <div className="flex items-center">
+          <div className="flex items-center text-base">
             bc1pabcd…1234
             <EditSOutline />
           </div>
@@ -45,13 +43,13 @@ const IndexPage = () => {
           </div>
           <div className="flex justify-between px-5">
             <button
-              className="w-2/5 bg-primary text-white py-2 px-4 text-center rounded-full"
+              className="w-5/12 bg-primary text-white py-2 px-4 text-center rounded-full"
               onClick={modal}
             >
               Receive
             </button>
             <button
-              className="w-2/5 bg-primary text-white py-2 px-4 text-center rounded-full"
+              className="w-5/12 bg-primary text-white py-2 px-4 text-center rounded-full"
               onClick={() => navigate("/transation")}
             >
               Send
@@ -63,25 +61,38 @@ const IndexPage = () => {
         <>
           <h1 className="text-base mt-5 mb-2">Tokens</h1>
           <Collapse accordion>
-            <Collapse.Panel key="1" title="第一项">
-              手风琴模式只能同时展开一个
-            </Collapse.Panel>
-            <Collapse.Panel key="2" title="第二项">
-              手风琴模式只能同时展开一个
-            </Collapse.Panel>
-            <Collapse.Panel key="3" title="第三项">
-              手风琴模式只能同时展开一个
+            <Collapse.Panel
+              key="1"
+              title={
+                <div className="flex justify-between">
+                  BTC
+                  <p>{fundingBalance}</p>
+                </div>
+              }
+              arrow={<div className="h-5 w-5"></div>}
+              disabled
+            ></Collapse.Panel>
+            <Collapse.Panel
+              key="2"
+              title={
+                <div className="flex justify-between">
+                  ATOM({atomUtxos.length})<span>{balance}</span>
+                </div>
+              }
+            >
+              <Selector
+                ellipsis={true}
+                options={atomUtxos.map((o) => ({
+                  label: o.value.toString(),
+                  value: o.txid,
+                }))}
+                className="bg-body-bg"
+                disabled
+              />
             </Collapse.Panel>
           </Collapse>
-          <button onClick={toast}>toast</button>
-          <button onClick={modal}>modal</button>
-          <h1 className="text-red-400 font-bold">indexPage</h1>
+          <div className="h-10"></div>
         </>
-      </div>
-      <div className="app-bottom">
-        <Button color="primary" className="w-full">
-          Send
-        </Button>
       </div>
     </div>
   );

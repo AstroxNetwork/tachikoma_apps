@@ -1,4 +1,4 @@
-import { UTXO } from './utxo';
+import { UTXO } from "./utxo";
 
 export interface IUnspentResponse {
   confirmed: number;
@@ -9,13 +9,18 @@ export interface IUnspentResponse {
 
 export interface ElectrumApiInterface {
   close: () => Promise<void>;
-  open: () => Promise<void>;
-  resetConnection: () => Promise<void>;
+  open: () => Promise<boolean>;
+  resetConnection: () => Promise<boolean>;
   isOpen: () => boolean;
   sendTransaction: (rawtx: string) => Promise<string>;
   getUnspentAddress: (address: string) => Promise<IUnspentResponse>;
   getUnspentScripthash: (address: string) => Promise<IUnspentResponse>;
-  waitUntilUTXO: (address: string, satoshis: number, sleepTimeSec: number, exactSatoshiAmount?: boolean) => Promise<any>;
+  waitUntilUTXO: (
+    address: string,
+    satoshis: number,
+    sleepTimeSec: number,
+    exactSatoshiAmount?: boolean
+  ) => Promise<any>;
   getTx: (txid: string, verbose?: boolean) => Promise<any>;
   serverVersion: () => Promise<any>;
   broadcast: (rawtx: string) => Promise<any>;
@@ -24,27 +29,54 @@ export interface ElectrumApiInterface {
   atomicalsGetGlobal: () => Promise<any>;
   atomicalsGet: (atomicalAliasOrId: string | number) => Promise<any>;
   atomicalsGetLocation: (atomicalAliasOrId: string | number) => Promise<any>;
-  atomicalsGetState: (atomicalAliasOrId: string | number, path: string, verbose: boolean) => Promise<any>;
-  atomicalsGetStateHistory: (atomicalAliasOrId: string | number) => Promise<any>;
-  atomicalsGetEventHistory: (atomicalAliasOrId: string | number) => Promise<any>;
+  atomicalsGetState: (
+    atomicalAliasOrId: string | number,
+    path: string,
+    verbose: boolean
+  ) => Promise<any>;
+  atomicalsGetStateHistory: (
+    atomicalAliasOrId: string | number
+  ) => Promise<any>;
+  atomicalsGetEventHistory: (
+    atomicalAliasOrId: string | number
+  ) => Promise<any>;
   atomicalsGetTxHistory: (atomicalAliasOrId: string | number) => Promise<any>;
   atomicalsList: (limit: number, offset: number, asc: boolean) => Promise<any>;
-  atomicalsByScripthash: (scripthash: string, verbose?: boolean) => Promise<any>;
+  atomicalsByScripthash: (
+    scripthash: string,
+    verbose?: boolean
+  ) => Promise<any>;
   atomicalsByAddress: (address: string) => Promise<any>;
   atomicalsAtLocation: (location: string) => Promise<any>;
   atomicalsGetByRealm: (realm: string) => Promise<any>;
-  atomicalsGetRealmInfo: (realmOrSubRealm: string, verbose?: boolean) => Promise<any>;
+  atomicalsGetRealmInfo: (
+    realmOrSubRealm: string,
+    verbose?: boolean
+  ) => Promise<any>;
   atomicalsGetByTicker: (ticker: string) => Promise<any>;
   atomicalsGetByContainer: (container: string) => Promise<any>;
-  atomicalsFindTickers: (tickerPrefix: string | null, asc?: boolean) => Promise<any>;
-  atomicalsFindContainers: (containerPrefix: string | null, asc?: boolean) => Promise<any>;
-  atomicalsFindRealms: (realmPrefix: string | null, asc?: boolean) => Promise<any>;
-  atomicalsFindSubRealms: (parentRealmId: string, subrealmPrefix: string | null, mostRecentFirst?: boolean) => Promise<any>;
+  atomicalsFindTickers: (
+    tickerPrefix: string | null,
+    asc?: boolean
+  ) => Promise<any>;
+  atomicalsFindContainers: (
+    containerPrefix: string | null,
+    asc?: boolean
+  ) => Promise<any>;
+  atomicalsFindRealms: (
+    realmPrefix: string | null,
+    asc?: boolean
+  ) => Promise<any>;
+  atomicalsFindSubRealms: (
+    parentRealmId: string,
+    subrealmPrefix: string | null,
+    mostRecentFirst?: boolean
+  ) => Promise<any>;
 }
 
 export interface IAtomicalBalanceSummary {
   confirmed: number;
-  type: 'FT' | 'NFT';
+  type: "FT" | "NFT";
   atomical_number?: number;
   atomical_id?: number;
   $ticker?: string;
@@ -69,7 +101,7 @@ export interface AmountToSend {
 
 export interface IAtomicalsInfo {
   confirmed: number;
-  type: 'FT' | 'NFT';
+  type: "FT" | "NFT";
   utxos: Array<{
     txid: string;
     script: any;
@@ -84,7 +116,7 @@ export interface IAtomicalBalances {
 }
 
 enum TickerStatus {
-  'verified' = 'verified',
+  "verified" = "verified",
 }
 
 export interface TickerCandidate {
@@ -105,10 +137,10 @@ export interface IAtomicalBalanceItem {
     note: string;
     verified_atomical_id: string;
   };
-  subtype: 'decentralized';
+  subtype: "decentralized";
   ticker: string;
   ticker_candidate: TickerCandidate[];
-  type: 'FT' | 'NFT';
+  type: "FT" | "NFT";
 }
 
 export interface IAtomicalBalanceItemData {
@@ -134,8 +166,8 @@ export interface IAtomicalBalanceItemData {
     confirmed: boolean;
     mint_data?: any; // todo
     mint_info?: any; // dodo
-    subtype: 'decentralized';
-    type: 'FT' | 'NFT';
+    subtype: "decentralized";
+    type: "FT" | "NFT";
     // todo
   };
   $container?: string;

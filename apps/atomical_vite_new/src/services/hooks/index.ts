@@ -1,14 +1,24 @@
 import { ElectrumApi } from "@/clients/eletrum";
 import { AtomicalService } from "../atomical";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IAtomicalBalances, ISelectedUtxo } from "@/interfaces/api";
 import { UTXO } from "@/interfaces/utxo";
 
+const ELECTRUMX_WSS = "wss://electrumx.atomicals.xyz:50012";
+const api = ElectrumApi.createClient(ELECTRUMX_WSS);
+const atomicalService = new AtomicalService(api);
 export function useAtomicalService() {
-  const ELECTRUMX_WSS = "wss://electrumx.atomicals.xyz:50012";
-  const api = ElectrumApi.createClient(ELECTRUMX_WSS);
-  const service = useMemo(() => new AtomicalService(api), [api]);
-  return service;
+  const [service, setService] = useState<AtomicalService | undefined>();
+  // const connectRef = useRef<boolean>();
+  useEffect(() => {
+    (async () => {
+      if (!atomicalService.isOpen) {
+        await atomicalService.electrumApi.resetConnection();
+      }
+      setService(atomicalService);
+    })();
+  }, []);
+  return atomicalService.isOpen && service;
 }
 
 export function useAtomicalWalletInfo(address: string) {
@@ -25,10 +35,12 @@ export function useAtomicalWalletInfo(address: string) {
   const [atomUtxos, setAtomUtxos] = useState<ISelectedUtxo[]>([]);
 
   useEffect(() => {
-    if (address) {
+    console.log("1", service);
+    if (address && service) {
+      console.log("2", service);
       init();
     }
-  }, [address]);
+  }, [address, service]);
 
   const init = async () => {
     try {

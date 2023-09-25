@@ -1,7 +1,7 @@
-import { ElectrumApiInterface, IUnspentResponse } from '../interfaces/api';
-import { detectAddressTypeToScripthash } from './utils';
-import { UTXO } from '../interfaces/utxo';
-import * as rpcws from 'rpc-websockets';
+import { ElectrumApiInterface, IUnspentResponse } from "../interfaces/api";
+import { detectAddressTypeToScripthash } from "./utils";
+import { UTXO } from "../interfaces/utxo";
+import * as rpcws from "rpc-websockets";
 const WebSocket = rpcws.Client;
 
 export interface IWSRequestParams {
@@ -14,33 +14,47 @@ export class ElectrumApi implements ElectrumApiInterface {
   private isOpenFlag = false;
   private rpc_id = 0;
 
-  private constructor(private url: string) {
-    this.resetConnection();
+  private constructor(public url: string) {
+    // this.resetConnection();
   }
 
-  public async resetConnection() {
-    this.ws = new WebSocket(this.url);
-    console.log(this.ws);
-    //this.open();
+  public async resetConnection(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.ws = new WebSocket(this.url, {
+        autoconnect: true,
+        reconnect: true,
+        reconnect_interval: 1000,
+        max_reconnects: 10,
+      });
+      this.ws.on("open", (event) => {
+        this.isOpenFlag = true;
+        resolve(true);
+        console.log("opened");
+      });
+    });
+
+    // this.ws.connect();
+    // this.open();
   }
 
   static createClient(url: string) {
     return new ElectrumApi(url);
   }
 
-  public async open(): Promise<any> {
-    const p = new Promise((resolve, reject) => {
+  public getUrl(): string {
+    return this.url;
+  }
+
+  public async open(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
       if (this.isOpenFlag) {
         resolve(true);
-        return;
       }
-
-      this.ws.on('open', event => {
+      this.ws.on("open", (event) => {
         this.isOpenFlag = true;
         resolve(true);
       });
     });
-    return p;
   }
 
   public isOpen(): boolean {
@@ -61,13 +75,13 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async sendTransaction(signedRawtx: string): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.transaction.broadcast', [signedRawtx])
+        .call("blockchain.transaction.broadcast", [signedRawtx])
         .then(function (result: any) {
-          console.log('result', result);
+          console.log("result", result);
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error', error);
+          console.log("error", error);
           reject(error);
         });
     });
@@ -77,7 +91,7 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async getTx(txid: string, verbose = false): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.transaction.get', [txid, verbose ? 1 : 0])
+        .call("blockchain.transaction.get", [txid, verbose ? 1 : 0])
         .then(function (result: any) {
           resolve({
             success: true,
@@ -91,15 +105,19 @@ export class ElectrumApi implements ElectrumApiInterface {
     return p;
   }
 
-  public async getUnspentAddress(address: string): Promise<IUnspentResponse | any> {
+  public async getUnspentAddress(
+    address: string
+  ): Promise<IUnspentResponse | any> {
     const { scripthash } = detectAddressTypeToScripthash(address);
     return this.getUnspentScripthash(scripthash);
   }
 
-  public async getUnspentScripthash(scripthash: string): Promise<IUnspentResponse | any> {
+  public async getUnspentScripthash(
+    scripthash: string
+  ): Promise<IUnspentResponse | any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.scripthash.listunspent', [scripthash])
+        .call("blockchain.scripthash.listunspent", [scripthash])
         .then(function (result: any) {
           const data = {
             unconfirmed: 0,
@@ -136,7 +154,12 @@ export class ElectrumApi implements ElectrumApiInterface {
     return p;
   }
 
-  async waitUntilUTXO(address: string, satoshis: number, intervalSeconds = 10, exactSatoshiAmount = false): Promise<any> {
+  async waitUntilUTXO(
+    address: string,
+    satoshis: number,
+    intervalSeconds = 10,
+    exactSatoshiAmount = false
+  ): Promise<any> {
     function hasAttachedAtomicals(utxo: any): any | null {
       if (utxo && utxo.atomicals && utxo.atomicals.length) {
         return true;
@@ -147,7 +170,7 @@ export class ElectrumApi implements ElectrumApiInterface {
     return new Promise<any[]>((resolve, reject) => {
       let intervalId: any;
       const checkForUtxo = async () => {
-        console.log('...');
+        console.log("...");
         try {
           const response: any = await this.getUnspentAddress(address);
           const utxos = response.utxos;
@@ -173,7 +196,7 @@ export class ElectrumApi implements ElectrumApiInterface {
             }
           }
         } catch (error) {
-          console.log('error', error);
+          console.log("error", error);
           reject(error);
           clearInterval(intervalId);
         }
@@ -185,7 +208,7 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async serverVersion(): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('server.version', [])
+        .call("server.version", [])
         .then(function (result: any) {
           resolve(result);
         })
@@ -199,7 +222,7 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async broadcast(rawtx: string): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.transaction.broadcast', [rawtx])
+        .call("blockchain.transaction.broadcast", [rawtx])
         .then(function (result: any) {
           resolve(result);
         })
@@ -213,12 +236,12 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async atomicalsGetGlobal(): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_global', [true])
+        .call("blockchain.atomicals.get_global", [true])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
@@ -228,87 +251,103 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async atomicalsGet(atomicalAliasOrId: string | number): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get', [atomicalAliasOrId])
+        .call("blockchain.atomicals.get", [atomicalAliasOrId])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsGetLocation(atomicalAliasOrId: string | number): Promise<any> {
+  public async atomicalsGetLocation(
+    atomicalAliasOrId: string | number
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_location', [atomicalAliasOrId])
+        .call("blockchain.atomicals.get_location", [atomicalAliasOrId])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsGetStateHistory(atomicalAliasOrId: string | number): Promise<any> {
+  public async atomicalsGetStateHistory(
+    atomicalAliasOrId: string | number
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_state_history', [atomicalAliasOrId])
+        .call("blockchain.atomicals.get_state_history", [atomicalAliasOrId])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsGetState(atomicalAliasOrId: string | number, path: string, verbose: boolean): Promise<any> {
+  public async atomicalsGetState(
+    atomicalAliasOrId: string | number,
+    path: string,
+    verbose: boolean
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_state_by_path', [atomicalAliasOrId, path, verbose ? 1 : 0])
+        .call("blockchain.atomicals.get_state_by_path", [
+          atomicalAliasOrId,
+          path,
+          verbose ? 1 : 0,
+        ])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsGetEventHistory(atomicalAliasOrId: string | number): Promise<any> {
+  public async atomicalsGetEventHistory(
+    atomicalAliasOrId: string | number
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_events', [atomicalAliasOrId])
+        .call("blockchain.atomicals.get_events", [atomicalAliasOrId])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsGetTxHistory(atomicalAliasOrId: string | number): Promise<any> {
+  public async atomicalsGetTxHistory(
+    atomicalAliasOrId: string | number
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_tx_history', [atomicalAliasOrId])
+        .call("blockchain.atomicals.get_tx_history", [atomicalAliasOrId])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
@@ -318,46 +357,53 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async history(scripthash: string): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.scripthash.get_history', [scripthash])
+        .call("blockchain.scripthash.get_history", [scripthash])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsList(limit: number, offset: number, asc = false): Promise<any> {
+  public async atomicalsList(
+    limit: number,
+    offset: number,
+    asc = false
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.list', [limit, offset, asc ? 1 : 0])
+        .call("blockchain.atomicals.list", [limit, offset, asc ? 1 : 0])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsByScripthash(scripthash: string, verbose = true): Promise<any> {
+  public async atomicalsByScripthash(
+    scripthash: string,
+    verbose = true
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       const params: any[] = [scripthash];
       if (verbose) {
         params.push(true);
       }
       this.ws
-        .call('blockchain.atomicals.listscripthash', params)
+        .call("blockchain.atomicals.listscripthash", params)
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
@@ -372,12 +418,12 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async atomicalsAtLocation(location: string): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.at_location', [location])
+        .call("blockchain.atomicals.at_location", [location])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
@@ -392,30 +438,36 @@ export class ElectrumApi implements ElectrumApiInterface {
         p.push(
           new Promise((resolve, reject) => {
             this.ws
-              .call('blockchain.transaction.get', [tx, verbose ? 1 : 0])
+              .call("blockchain.transaction.get", [tx, verbose ? 1 : 0])
               .then(function (result: any) {
                 resolve(result);
               })
               .catch((error: any) => {
-                console.log('error ', error);
+                console.log("error ", error);
                 reject(error);
               });
-          }),
+          })
         );
       }
       return Promise.all(p);
     }
   }
 
-  public async atomicalsGetRealmInfo(realmOrSubRealm: string, verbose?: boolean): Promise<any> {
+  public async atomicalsGetRealmInfo(
+    realmOrSubRealm: string,
+    verbose?: boolean
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_realm_info', [realmOrSubRealm, verbose ? 1 : 0])
+        .call("blockchain.atomicals.get_realm_info", [
+          realmOrSubRealm,
+          verbose ? 1 : 0,
+        ])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
@@ -425,12 +477,12 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async atomicalsGetByRealm(realm: string): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_by_realm', [realm])
+        .call("blockchain.atomicals.get_by_realm", [realm])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
@@ -440,12 +492,12 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async atomicalsGetByTicker(ticker: string): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_by_ticker', [ticker])
+        .call("blockchain.atomicals.get_by_ticker", [ticker])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
@@ -455,19 +507,22 @@ export class ElectrumApi implements ElectrumApiInterface {
   public async atomicalsGetByContainer(container: string): Promise<any> {
     const p = new Promise((resolve, reject) => {
       this.ws
-        .call('blockchain.atomicals.get_by_container', [container])
+        .call("blockchain.atomicals.get_by_container", [container])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsFindTickers(prefix: string | null, asc?: boolean): Promise<any> {
+  public async atomicalsFindTickers(
+    prefix: string | null,
+    asc?: boolean
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       const args: any = [];
       args.push(prefix ? prefix : null);
@@ -477,19 +532,22 @@ export class ElectrumApi implements ElectrumApiInterface {
         args.push(0);
       }
       this.ws
-        .call('blockchain.atomicals.find_tickers', args)
+        .call("blockchain.atomicals.find_tickers", args)
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsFindContainers(prefix: string | null, asc?: boolean): Promise<any> {
+  public async atomicalsFindContainers(
+    prefix: string | null,
+    asc?: boolean
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       const args: any = [];
       args.push(prefix ? prefix : null);
@@ -499,19 +557,22 @@ export class ElectrumApi implements ElectrumApiInterface {
         args.push(0);
       }
       this.ws
-        .call('blockchain.atomicals.find_containers', args)
+        .call("blockchain.atomicals.find_containers", args)
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsFindRealms(prefix: string | null, asc?: boolean): Promise<any> {
+  public async atomicalsFindRealms(
+    prefix: string | null,
+    asc?: boolean
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       const args: any = [];
       args.push(prefix ? prefix : null);
@@ -521,19 +582,23 @@ export class ElectrumApi implements ElectrumApiInterface {
         args.push(0);
       }
       this.ws
-        .call('blockchain.atomicals.find_realms', args)
+        .call("blockchain.atomicals.find_realms", args)
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });
     return p;
   }
 
-  public async atomicalsFindSubRealms(parentRealmId: string, prefix: string | null, asc?: boolean): Promise<any> {
+  public async atomicalsFindSubRealms(
+    parentRealmId: string,
+    prefix: string | null,
+    asc?: boolean
+  ): Promise<any> {
     const p = new Promise((resolve, reject) => {
       const args: any = [];
       args.push(prefix ? prefix : null);
@@ -543,12 +608,12 @@ export class ElectrumApi implements ElectrumApiInterface {
         args.push(0);
       }
       this.ws
-        .call('blockchain.atomicals.find_subrealms', [parentRealmId, args])
+        .call("blockchain.atomicals.find_subrealms", [parentRealmId, args])
         .then(function (result: any) {
           resolve(result);
         })
         .catch((error: any) => {
-          console.log('error ', error);
+          console.log("error ", error);
           reject(error);
         });
     });

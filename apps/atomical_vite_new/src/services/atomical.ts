@@ -1,17 +1,25 @@
 // import { ElectrumApi } from '@/clients/eletrum';
-import { detectAddressTypeToScripthash } from '../clients/utils';
-import { ElectrumApiInterface, IAtomicalBalanceSummary } from '../interfaces/api';
+import { ElectrumApi } from "@/clients/eletrum";
+import { detectAddressTypeToScripthash } from "../clients/utils";
+import { IAtomicalBalanceSummary } from "../interfaces/api";
 
 export class AtomicalService {
-  constructor(public electrumApi: ElectrumApiInterface) {}
+  constructor(public electrumApi: ElectrumApi) {}
 
+  get isOpen() {
+    return this.electrumApi.isOpen();
+  }
   async ensureService() {
-    await this.electrumApi.open();
+    if (!this.electrumApi.isOpen()) {
+      await this.electrumApi.open();
+    } else {
+      await this.electrumApi.resetConnection();
+    }
   }
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {
     const { scripthash } = detectAddressTypeToScripthash(address);
-    let res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
+    const res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
     let history = undefined;
     if (verbose) {
       history = await this.electrumApi.history(scripthash);
@@ -72,10 +80,13 @@ export class AtomicalService {
     };
   }
 
-  async getBalanceSummary(atomicalId: string, address: string): Promise<IAtomicalBalanceSummary> {
+  async getBalanceSummary(
+    atomicalId: string,
+    address: string
+  ): Promise<IAtomicalBalanceSummary> {
     const res = await this.electrumApi.atomicalsByAddress(address);
     if (!res.atomicals[atomicalId]) {
-      throw 'No Atomicals found for ' + atomicalId;
+      throw "No Atomicals found for " + atomicalId;
     }
     // console.log(JSON.stringify(res.atomicals[atomicalId], null, 2))
     // console.log(JSON.stringify(res.utxos, null, 2))
