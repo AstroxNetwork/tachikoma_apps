@@ -1,4 +1,4 @@
-import { CheckCircleFill } from "antd-mobile-icons";
+import { CheckCircleFill, CheckCircleOutline } from "antd-mobile-icons";
 import { useState } from "react";
 
 type Item = {
@@ -6,26 +6,39 @@ type Item = {
   label: string;
 };
 type SelectorProps = {
-  items: Item[];
+  options: Item[];
   value: string[];
   disabled?: boolean;
+  onChange: (value, valueItem) => void;
 };
 const Selector: React.FC<SelectorProps> = (props) => {
-  const { items, value, disabled } = props;
+  const { options, value, disabled, onChange } = props;
   const [selected, setSelected] = useState<string[]>(value);
+  const [selectItems, setSelectItems] = useState<Item[]>([]);
+  console.log("selected", selected);
+  console.log("selected", selected.includes("#1031"));
   return (
     <div className="flex justify-between flex-wrap">
-      {items.map((item) => {
+      {options.map((item) => {
         return (
           <div
+            key={item.value}
             className="flex flex-col p-2 bg-card-bg rounded-lg basis-[48%] mt-4"
             onClick={() => {
-              // if (disabled) return;
+              console.log("onTouchEnd");
+              if (disabled) return;
+              let value;
+              let valueItem;
               if (selected.includes(item.value)) {
-                setSelected(selected.filter((v) => v !== item.value));
+                value = selected.filter((v) => v !== item.value);
+                valueItem = selectItems.filter((v) => v.value !== item.value);
               } else {
-                setSelected([...selected, item.value]);
+                value = [...selected, item.value];
+                valueItem = [...selectItems, item];
               }
+              setSelected(value);
+              setSelectItems(valueItem);
+              onChange(value, valueItem);
             }}
           >
             <p>{item.value}</p>
@@ -33,12 +46,12 @@ const Selector: React.FC<SelectorProps> = (props) => {
               {item.label}
             </h1>
             {!disabled && (
-              <div className="flex justify-end w-full">
-                <CheckCircleFill
-                  className={`${
-                    selected.includes(item.value) ? "text-primary" : ""
-                  } text-xl`}
-                />
+              <div className="flex justify-end">
+                {selected.includes(item.value) ? (
+                  <CheckCircleFill className={`text-primary text-xl`} />
+                ) : (
+                  <CheckCircleOutline className="text-xl" />
+                )}
               </div>
             )}
           </div>

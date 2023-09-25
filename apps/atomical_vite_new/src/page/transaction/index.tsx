@@ -1,6 +1,8 @@
 import Selector from "@/components/components/selector";
 import { Button, Checkbox, Form, Input, Space } from "antd-mobile";
+import { LeftOutline } from "antd-mobile-icons";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const items = [
   {
@@ -35,6 +37,7 @@ const items = [
 
 const Transaction = () => {
   const [checkeds, setCheckeds] = useState<string[]>([]);
+  const navigate = useNavigate();
   return (
     <div
       className="app-container"
@@ -43,6 +46,9 @@ const Transaction = () => {
       }}
     >
       <div className="app-header">
+        <div className="pt-4">
+          <LeftOutline className="text-2xl" onClick={() => navigate(-1)} />
+        </div>
         <div className="text-center">
           <h1 className="pt-20 text-3xl font-bold">2000</h1>
           <p>ATOM</p>
@@ -58,7 +64,7 @@ const Transaction = () => {
             </Form.Item>
           </Form> */}
           <h2 className="text-base mt-3 mb-3">Select token</h2>
-          <p>Note: #207, #5439 will be merged into 2,000 ATOM.</p>
+          <p>Note: #207, #5439 will be merged into ATOM.</p>
           {/* <Checkbox.Group
             value={checkeds}
             onChange={(v) => {
@@ -76,10 +82,17 @@ const Transaction = () => {
           <div
             className="pb-5 overflow-scroll"
             style={{
-              maxHeight: "calc(100vh - 480px)",
+              maxHeight: "calc(100vh - 560px)",
             }}
           >
-            <Selector items={items} value={checkeds} />
+            <Selector
+              options={items}
+              value={checkeds}
+              onChange={(value, valueItem) => {
+                console.log("valueItem", valueItem);
+                setCheckeds(value);
+              }}
+            />
           </div>
         </div>
       </div>

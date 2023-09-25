@@ -2,8 +2,19 @@ import { Button, Collapse } from "antd-mobile";
 import { Modal, Toast } from "@/components";
 import { useNavigate } from "react-router-dom";
 import { EditSOutline } from "antd-mobile-icons";
+import { useAtomicalWalletInfo } from "@/services/hooks";
 const IndexPage = () => {
   const navigate = useNavigate();
+  const address =
+    "bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv";
+  const {
+    balance,
+    atomUtxos,
+    fundingBalance,
+    nonAtomUtxos,
+    balanceMap,
+    allUtxos,
+  } = useAtomicalWalletInfo(address);
   const modal = () => {
     Modal.show({
       closeOnMaskClick: true,
@@ -14,6 +25,13 @@ const IndexPage = () => {
   const toast = () => {
     Toast.show("ddddddd");
   };
+  console.log("balance", balance);
+  console.log("atomUtxos", atomUtxos);
+  console.log("fundingBalance", fundingBalance);
+  console.log("nonAtomUtxos", nonAtomUtxos);
+  console.log("balanceMap", balanceMap);
+  console.log("allUtxos", allUtxos);
+
   return (
     <div className="app-container">
       <div className="app-header">
