@@ -15,15 +15,38 @@ export class ElectrumApi implements ElectrumApiInterface {
   private rpc_id = 0;
 
   private constructor(public url: string) {
-    this.resetConnection();
+    this._connect();
   }
 
   public async resetConnection() {
-    this.ws = new WebSocket(this.url, { autoconnect: true, reconnect: true, reconnect_interval: 1000, max_reconnects: 10 });
-    this.ws.on('open', event => {
-      this.isOpenFlag = true;
-      console.log('opened');
-    });
+    try {
+      this.ws = new WebSocket(this.url);
+      this.ws.on('open', event => {
+        this.isOpenFlag = true;
+        console.log('opened');
+      });
+    } catch (error) {
+      console.log('test error');
+      throw error;
+    }
+
+    // this.ws.connect();
+    // this.open();
+  }
+
+  private _connect() {
+    try {
+      this.ws = new WebSocket(this.url);
+      this.ws.connect();
+      this.ws.on('open', event => {
+        this.isOpenFlag = true;
+        console.log('opened');
+      });
+    } catch (error) {
+      console.log('open error');
+      throw error;
+    }
+
     // this.ws.connect();
     // this.open();
   }
@@ -44,6 +67,11 @@ export class ElectrumApi implements ElectrumApiInterface {
       this.ws.on('open', event => {
         this.isOpenFlag = true;
         resolve(true);
+      });
+      this.ws.on('error', event => {
+        this.isOpenFlag = false;
+        console.log('error');
+        reject(false);
       });
     });
   }

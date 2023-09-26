@@ -20,9 +20,6 @@ export function handleAddress(address: string, padding: number = 6): string {
 }
 
 const ELECTRUMX_WSS = 'wss://electrumx.atomicals.xyz:50012';
-const api = ElectrumApi.createClient(ELECTRUMX_WSS);
-const service = new AtomicalService(api);
-
 function App() {
   const [originAddress, setOriginAddress] = useState<string | undefined>(undefined); // 'bc1qpgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'
   const [address, setAddress] = useState<string | undefined>(undefined);
@@ -42,35 +39,53 @@ function App() {
   const [xOnlyPubHex, setXonlyPubHex] = useState<string | undefined>(undefined);
   const [isAllowedAddressType, setIsAllowedAddressType] = useState<boolean>(true);
 
+  const [service, setService] = useState<AtomicalService | undefined>(undefined);
+
+  const init = () => {
+    try {
+      const api = ElectrumApi.createClient(ELECTRUMX_WSS);
+      const service = new AtomicalService(api);
+      setService(service);
+    } catch (error) {
+      console.log('get service error');
+      showToast({ content: `${error}`, type: 'fail' });
+    }
+  };
+
   const getWalletInfo = async () => {
     // const addr = await getAddress();
     if (address) {
-      const walletInfo = await service.walletInfo(address, false);
-      const { data } = walletInfo;
-      const { atomicals_confirmed, atomicals_balances, atomicals_utxos } = data;
-      console.log(data);
-      console.log({ atomicals_confirmed });
-      setBalance(atomicals_confirmed);
-      setBalanceMap(atomicals_balances as IAtomicalBalances);
-      const allUtxos = await service.electrumApi.getUnspentAddress(address);
-      if (atomicals_utxos.length > 0) {
-        setAtomUtxos(atomicals_utxos);
-      }
-      if (allUtxos.utxos.length > 0) {
-        setAllUxtos(allUtxos.utxos);
-      }
-
-      const nonAtomUtxos: UTXO[] = [];
-      let nonAtomUtxosValue = 0;
-      for (let i = 0; i < allUtxos.utxos.length; i++) {
-        const utxo = allUtxos.utxos[i];
-        if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
-          nonAtomUtxos.push(utxo);
-          nonAtomUtxosValue += utxo.value;
+      try {
+        showToast({ content: 'Connecting Service', type: 'loading' });
+        const walletInfo = await service.walletInfo(address, false);
+        const { data } = walletInfo;
+        const { atomicals_confirmed, atomicals_balances, atomicals_utxos } = data;
+        console.log(data);
+        console.log({ atomicals_confirmed });
+        setBalance(atomicals_confirmed);
+        setBalanceMap(atomicals_balances as IAtomicalBalances);
+        const allUtxos = await service.electrumApi.getUnspentAddress(address);
+        if (atomicals_utxos.length > 0) {
+          setAtomUtxos(atomicals_utxos);
         }
+        if (allUtxos.utxos.length > 0) {
+          setAllUxtos(allUtxos.utxos);
+        }
+
+        const nonAtomUtxos: UTXO[] = [];
+        let nonAtomUtxosValue = 0;
+        for (let i = 0; i < allUtxos.utxos.length; i++) {
+          const utxo = allUtxos.utxos[i];
+          if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
+            nonAtomUtxos.push(utxo);
+            nonAtomUtxosValue += utxo.value;
+          }
+        }
+        setNonAtomUtxos(nonAtomUtxos.sort((a, b) => b.value - a.value));
+        setFundingBalance(nonAtomUtxosValue);
+      } catch (error) {
+        throw error;
       }
-      setNonAtomUtxos(nonAtomUtxos.sort((a, b) => b.value - a.value));
-      setFundingBalance(nonAtomUtxosValue);
     }
   };
 
@@ -114,17 +129,31 @@ function App() {
   };
 
   useEffect(() => {
-    if (address === undefined) {
+    if (address && service) {
       (async () => {
-        await getAddress();
-        // await service.ensureService();
+        try {
+          await getWalletInfo();
+        } catch (error) {
+          console.log('get wallet info error + ', error);
+          showToast({ content: `${error}`, type: 'fail' });
+        }
       })();
     } else {
-      (async () => {
-        await getWalletInfo();
-      })();
+      if (address === undefined) {
+        (async () => {
+          try {
+            await getAddress();
+          } catch (error) {
+            console.log('get address error');
+            showToast({ content: `${error}`, type: 'fail' });
+          }
+          // await service.ensureService();
+        })();
+      } else if (!service && address) {
+        init();
+      }
     }
-  }, [address]);
+  }, [address, service]);
 
   const handleBalanceMap = () => {
     if (balanceMap) {
@@ -228,9 +257,13 @@ function App() {
                 display: 'inline-block',
               }}
               onTouchEnd={async () => {
-                showToast({ content: 'Balance Updated', type: 'success' });
-                console.log('get wallet');
-                await getWalletInfo();
+                try {
+                  await getWalletInfo();
+                  showToast({ content: 'Balance Updated', type: 'success' });
+                } catch (error) {
+                  console.log(error);
+                  showToast({ content: `${error}`, type: 'fail' });
+                }
               }}
             >{`🚀`}</span>
           </div>

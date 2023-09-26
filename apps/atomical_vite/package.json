@@ -17,6 +17,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "bundle": "cp config.json ./dist/config.json && cd dist && dart ../../flutter_webf_tools/packages/bundle_packaging/bin/bundle_packaging.dart",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "zip": "tar -zcvf dist.tar.gz dist"

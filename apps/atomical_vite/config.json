@@ -1,0 +1,12 @@
+{
+  "name": "atom_wallet_bundle",
+  "bundle": "com.astrox.atom_wallet_bundle",
+  "version": "1.0.0+13",
+  "localized_name": {
+    "en": "atom wallet test",
+    "zh": "atom wallet 测试版"
+  },
+  "icon": "icon.png",
+  "entrypoint": "index",
+  "pages": ["index"]
+}

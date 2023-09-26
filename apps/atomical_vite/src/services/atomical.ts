@@ -6,74 +6,97 @@ export class AtomicalService {
   constructor(public electrumApi: ElectrumApiInterface) {}
 
   async ensureService() {
-    if (!this.electrumApi.isOpen()) {
-      await this.electrumApi.open();
-    } else {
-      await this.electrumApi.resetConnection();
+    try {
+      if (!this.electrumApi.isOpen()) {
+        await this.electrumApi.open();
+      } else {
+        await this.electrumApi.resetConnection();
+      }
+    } catch (error) {
+      console.log('test error 2');
+      throw error;
+    }
+  }
+
+  async open() {
+    try {
+      return await this.electrumApi.open();
+    } catch (error) {
+      throw 'socket open error';
     }
   }
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {
-    const { scripthash } = detectAddressTypeToScripthash(address);
-    let res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
-    let history = undefined;
-    if (verbose) {
-      history = await this.electrumApi.history(scripthash);
-    }
-    const plainUtxos: any[] = [];
-    let total_confirmed = 0;
-    let total_unconfirmed = 0;
-    let regular_confirmed = 0;
-    let regular_unconfirmed = 0;
-    let atomicals_confirmed = 0;
-    let atomicals_unconfirmed = 0;
-    const atomicalsUtxos: any[] = [];
-
-    for (const utxo of res.utxos) {
-      if (utxo.height <= 0) {
-        total_unconfirmed += utxo.value;
-      } else {
-        total_confirmed += utxo.value;
+    try {
+      await this.open();
+      const { scripthash } = detectAddressTypeToScripthash(address);
+      let res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
+      let history = undefined;
+      if (verbose) {
+        history = await this.electrumApi.history(scripthash);
       }
+      const plainUtxos: any[] = [];
+      let total_confirmed = 0;
+      let total_unconfirmed = 0;
+      let regular_confirmed = 0;
+      let regular_unconfirmed = 0;
+      let atomicals_confirmed = 0;
+      let atomicals_unconfirmed = 0;
+      const atomicalsUtxos: any[] = [];
 
-      if (utxo.atomicals && utxo.atomicals.length) {
+      for (const utxo of res.utxos) {
         if (utxo.height <= 0) {
-          atomicals_unconfirmed += utxo.value;
+          total_unconfirmed += utxo.value;
         } else {
-          atomicals_confirmed += utxo.value;
+          total_confirmed += utxo.value;
         }
-        atomicalsUtxos.push(utxo);
-        continue;
+
+        if (utxo.atomicals && utxo.atomicals.length) {
+          if (utxo.height <= 0) {
+            atomicals_unconfirmed += utxo.value;
+          } else {
+            atomicals_confirmed += utxo.value;
+          }
+          atomicalsUtxos.push(utxo);
+          continue;
+        }
+
+        if (utxo.height <= 0) {
+          regular_unconfirmed += utxo.value;
+        } else {
+          regular_confirmed += utxo.value;
+        }
+
+        plainUtxos.push(utxo);
       }
 
-      if (utxo.height <= 0) {
-        regular_unconfirmed += utxo.value;
-      } else {
-        regular_confirmed += utxo.value;
-      }
-
-      plainUtxos.push(utxo);
+      return {
+        success: true,
+        data: {
+          address: address,
+          scripthash: scripthash,
+          atomicals_count: Object.keys(res.atomicals).length,
+          atomicals_utxos: atomicalsUtxos,
+          atomicals_balances: res.atomicals,
+          total_confirmed,
+          total_unconfirmed,
+          atomicals_confirmed,
+          atomicals_unconfirmed,
+          regular_confirmed,
+          regular_unconfirmed,
+          regular_utxos: plainUtxos,
+          regular_utxo_count: plainUtxos.length,
+          history,
+        },
+      };
+    } catch (error) {
+      // if ((error.message as string).toLowerCase().includes('socket')) {
+      //   throw 'Network Connection Error';
+      // } else {
+      //   throw error;
+      // }
+      throw 'Network Connection Error';
     }
-
-    return {
-      success: true,
-      data: {
-        address: address,
-        scripthash: scripthash,
-        atomicals_count: Object.keys(res.atomicals).length,
-        atomicals_utxos: atomicalsUtxos,
-        atomicals_balances: res.atomicals,
-        total_confirmed,
-        total_unconfirmed,
-        atomicals_confirmed,
-        atomicals_unconfirmed,
-        regular_confirmed,
-        regular_unconfirmed,
-        regular_utxos: plainUtxos,
-        regular_utxo_count: plainUtxos.length,
-        history,
-      },
-    };
   }
 
   async getBalanceSummary(atomicalId: string, address: string): Promise<IAtomicalBalanceSummary> {
