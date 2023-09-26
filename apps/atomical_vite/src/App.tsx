@@ -28,7 +28,7 @@ function App() {
   const [nonAtomUtxos, setNonAtomUtxos] = useState<UTXO[]>([]);
   const [balanceMap, setBalanceMap] = useState<IAtomicalBalances | undefined>(undefined);
   const [visible, setVisible] = useState(false);
-  const [modalContent, setModalContent] = useState<string | undefined>(undefined);
+  const [modalContent, setModalContent] = useState<JSX.Element | string | undefined>(undefined);
   const [allUtxos, setAllUxtos] = useState<UTXO[]>([]);
   const [atomUtxos, setAtomUtxos] = useState<ISelectedUtxo[]>([]);
   const [relatedUtxos, setRelatedUtxos] = useState<ISelectedUtxo[]>([]);
@@ -122,7 +122,21 @@ function App() {
     } else {
       setVisible(true);
       setIsAllowedAddressType(false);
-      setModalContent("Please use legacy address to login, start with '1'");
+      setModalContent(
+        <div style={{ textAlign: 'left' }}>
+          <p style={{ textAlign: 'left' }}>
+            <span style={{ display: 'inline-block' }}>Please make sure this address is</span>
+            <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}NOT</span>
+            <span style={{ display: 'inline-block' }}>{` `}mixed with other assets, for examples:</span>
+          </p>
+          <p style={{ textAlign: 'left', color: '#ff9933' }}>BRC20, Inscriptions</p>
+          <p style={{ textAlign: 'left' }}>
+            <span style={{ display: 'inline-block' }}>Otherwise your assets might be</span>
+            <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}LOST</span>
+            <span style={{ display: 'inline-block' }}>{` `}during transfer</span>
+          </p>
+        </div>,
+      );
     }
 
     return p2trAddress;
@@ -373,7 +387,36 @@ function App() {
               }}
             />
           ) : (
-            modalContent
+            <div
+              style={{
+                alignItems: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <div
+                style={{
+                  marginBottom: 32,
+                  padding: 32,
+                }}
+              >
+                {modalContent}
+              </div>
+              <div
+                style={{
+                  backgroundColor: '#3399ff',
+                  color: '#fff',
+                  padding: '30px 40px',
+                  maxWidth: 400,
+                }}
+                onTouchStart={() => {
+                  setVisible(false);
+                }}
+              >
+                I Understand
+              </div>
+            </div>
           )}
         </div>
       </Modal>
