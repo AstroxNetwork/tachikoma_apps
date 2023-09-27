@@ -5,17 +5,8 @@ import { ElectrumApiInterface, IAtomicalBalanceSummary } from '../interfaces/api
 export class AtomicalService {
   constructor(public electrumApi: ElectrumApiInterface) {}
 
-  async ensureService() {
-    try {
-      if (!this.electrumApi.isOpen()) {
-        await this.electrumApi.open();
-      } else {
-        await this.electrumApi.resetConnection();
-      }
-    } catch (error) {
-      console.log('test error 2');
-      throw error;
-    }
+  private async ensureService() {
+    await this.electrumApi.resetConnection();
   }
 
   async open() {
@@ -28,7 +19,7 @@ export class AtomicalService {
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {
     try {
-      await this.open();
+      await this.ensureService();
       const { scripthash } = detectAddressTypeToScripthash(address);
       let res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
       let history = undefined;
@@ -100,6 +91,7 @@ export class AtomicalService {
   }
 
   async getBalanceSummary(atomicalId: string, address: string): Promise<IAtomicalBalanceSummary> {
+    await this.ensureService();
     const res = await this.electrumApi.atomicalsByAddress(address);
     if (!res.atomicals[atomicalId]) {
       throw 'No Atomicals found for ' + atomicalId;
