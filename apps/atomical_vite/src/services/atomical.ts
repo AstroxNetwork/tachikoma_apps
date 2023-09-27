@@ -19,7 +19,7 @@ export class AtomicalService {
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {
     try {
-      await this.ensureService();
+      await this.open();
       const { scripthash } = detectAddressTypeToScripthash(address);
       let res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
       let history = undefined;
@@ -91,7 +91,6 @@ export class AtomicalService {
   }
 
   async getBalanceSummary(atomicalId: string, address: string): Promise<IAtomicalBalanceSummary> {
-    await this.ensureService();
     const res = await this.electrumApi.atomicalsByAddress(address);
     if (!res.atomicals[atomicalId]) {
       throw 'No Atomicals found for ' + atomicalId;

@@ -14,47 +14,41 @@ export class ElectrumApi implements ElectrumApiInterface {
   private isOpenFlag = false;
   private rpc_id = 0;
 
-  private constructor(private url: string) {
-    this.resetConnection();
+  private constructor(public url: string) {
+    this._connect();
   }
 
-  private _promise: Promise<boolean> | undefined;
-
-  resetConnection(): Promise<boolean | void> {
-    if (this._promise) {
-      return this._promise;
-    }
-    this._promise = new Promise<boolean>((resolve, reject) => {
-      this.ws = new rpcws.Client(this.url);
-      let called = false;
-      this.ws.on('open', e => {
-        console.log('open', e);
-        if (!called) {
-          resolve(true);
-        }
+  public async resetConnection() {
+    try {
+      this.ws = new WebSocket(this.url);
+      this.ws.on('open', event => {
         this.isOpenFlag = true;
-        called = true;
+        console.log('opened');
       });
-      this.ws.addListener('error', e => {
-        console.log('error', e);
-        if (!called) {
-          reject(e);
-        }
-        this.isOpenFlag = false;
-        this._promise = undefined;
-        called = true;
+    } catch (error) {
+      console.log('test error');
+      throw error;
+    }
+
+    // this.ws.connect();
+    // this.open();
+  }
+
+  private _connect() {
+    try {
+      this.ws = new WebSocket(this.url);
+      this.ws.connect();
+      this.ws.on('open', event => {
+        this.isOpenFlag = true;
+        console.log('opened');
       });
-      this.ws.addListener('close', e => {
-        console.log('close', e);
-        if (!called) {
-          reject(e);
-        }
-        this.isOpenFlag = false;
-        this._promise = undefined;
-        called = true;
-      });
-    });
-    return this._promise;
+    } catch (error) {
+      console.log('open error');
+      throw error;
+    }
+
+    // this.ws.connect();
+    // this.open();
   }
 
   static createClient(url: string) {
