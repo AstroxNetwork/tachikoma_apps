@@ -67,6 +67,9 @@ function App() {
         setBalance(atomicals_confirmed);
         setBalanceMap(atomicals_balances as IAtomicalBalances);
         const allUtxos = await service.electrumApi.getUnspentAddress(address);
+        const ordUtxosResoponse = await provider.getInscriptions(address);
+        const { list: ordList } = ordUtxosResoponse;
+
         if (atomicals_utxos.length > 0) {
           setAtomUtxos(atomicals_utxos);
         }
@@ -75,12 +78,34 @@ function App() {
         }
 
         const nonAtomUtxos: UTXO[] = [];
+        const _nonAtomUtxos: UTXO[] = [];
         let nonAtomUtxosValue = 0;
-        for (let i = 0; i < allUtxos.utxos.length; i++) {
-          const utxo = allUtxos.utxos[i];
-          if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
-            nonAtomUtxos.push(utxo);
-            nonAtomUtxosValue += utxo.value;
+
+        if (ordList.length === 0) {
+          for (let i = 0; i < allUtxos.utxos.length; i++) {
+            const utxo = allUtxos.utxos[i];
+            if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
+              nonAtomUtxos.push(utxo);
+              nonAtomUtxosValue += utxo.value;
+            }
+          }
+        } else {
+          console.log('shit 1');
+          for (let i = 0; i < allUtxos.utxos.length; i++) {
+            const utxo = allUtxos.utxos[i];
+            if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
+              _nonAtomUtxos.push(utxo);
+            }
+          }
+          console.log('ordList.length: ' + ordList.length);
+          console.log('_nonAtomUtxos length:' + _nonAtomUtxos.length);
+
+          for (let j = 0; j < _nonAtomUtxos.length; j++) {
+            const utxo = _nonAtomUtxos[j];
+            if (ordList.findIndex(item => item.output.split(':')[0] === utxo.txId) < 0) {
+              nonAtomUtxos.push(utxo);
+              nonAtomUtxosValue += utxo.value;
+            }
           }
         }
         setNonAtomUtxos(nonAtomUtxos.sort((a, b) => b.value - a.value));
@@ -120,7 +145,6 @@ function App() {
     const currentAddressType = await provider.getAddressType(accs[0]);
     // const p2trAddress = 'bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'; //fromPubToP2tr(p2trPub);
     setAddress(p2trAddress);
-
     setOriginAddressType(currentAddressType);
 
     if (currentAddressType === 'p2pkh') {
@@ -347,7 +371,7 @@ function App() {
                 'EuclidCircularB,Inter var,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji',
             }}
           >
-            BTC Balance
+            Available BTC
           </div>
           <div
             style={{
