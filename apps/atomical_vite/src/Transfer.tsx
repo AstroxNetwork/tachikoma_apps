@@ -31,6 +31,7 @@ export enum TransferStatus {
 const flexCenter = { display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', flex: 1, padding: 32 };
 
 export const Transfer = ({
+  originAddressType,
   originAddress,
   primaryAddress,
   fundingBalance,
@@ -45,6 +46,7 @@ export const Transfer = ({
   setVisible,
   provider,
 }: {
+  originAddressType?: string;
   originAddress?: string;
   primaryAddress?: string;
   fundingBalance?: number;
@@ -333,7 +335,7 @@ export const Transfer = ({
       console.log(printedPsbt);
 
       try {
-        const s = await provider.signPsbt(originAddress, printedPsbt, { addressType: 'p2pkhtr' });
+        const s = await provider.signPsbt(originAddress, printedPsbt, { addressType: originAddressType === 'p2pkh' ? 'p2pkhtr' : 'p2tr' });
         console.log({ s });
         const signedPsbt = bitcoin.Psbt.fromHex(s);
         // signedPsbt.finalizeAllInputs();

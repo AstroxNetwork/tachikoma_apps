@@ -38,6 +38,8 @@ function App() {
   const [relatedTicker, setRelatedTicker] = useState<string | undefined>(undefined);
   const [xOnlyPubHex, setXonlyPubHex] = useState<string | undefined>(undefined);
   const [isAllowedAddressType, setIsAllowedAddressType] = useState<boolean>(true);
+  const [modalClosable, setModalClosable] = useState<boolean>(true);
+  const [originAddressType, setOriginAddressType] = useState<string | undefined>(undefined);
 
   const [service, setService] = useState<AtomicalService | undefined>(undefined);
 
@@ -115,28 +117,53 @@ function App() {
     setXonlyPubHex(xpub);
     // setXonlyPubHex('133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b');
     const p2trAddress = fromPubToP2tr(p2trPub);
+    const currentAddressType = await provider.getAddressType(accs[0]);
     // const p2trAddress = 'bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'; //fromPubToP2tr(p2trPub);
     setAddress(p2trAddress);
-    if ((await provider.getAddressType(accs[0])) === 'p2pkh') {
+
+    setOriginAddressType(currentAddressType);
+
+    if (currentAddressType === 'p2pkh') {
       setIsAllowedAddressType(true);
     } else {
-      setVisible(true);
-      setIsAllowedAddressType(false);
-      setModalContent(
-        <div style={{ textAlign: 'left' }}>
-          <p style={{ textAlign: 'left' }}>
-            <span style={{ display: 'inline-block' }}>Please make sure this address is</span>
-            <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}NOT</span>
-            <span style={{ display: 'inline-block' }}>{` `}mixed with other assets, for examples:</span>
-          </p>
-          <p style={{ textAlign: 'left', color: '#ff9933' }}>BRC20, Inscriptions</p>
-          <p style={{ textAlign: 'left' }}>
-            <span style={{ display: 'inline-block' }}>Otherwise your assets might be</span>
-            <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}LOST</span>
-            <span style={{ display: 'inline-block' }}>{` `}during transfer</span>
-          </p>
-        </div>,
-      );
+      if (currentAddressType === 'p2wpkh' || currentAddressType === 'p2sh') {
+        setModalClosable(false);
+        setVisible(true);
+        setIsAllowedAddressType(false);
+        setModalContent(
+          <div style={{ textAlign: 'left' }}>
+            <p style={{ textAlign: 'left' }}>
+              <span style={{ display: 'inline-block' }}>Please aware this address you use to login is</span>
+              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}NOT supported</span>
+              <span style={{ display: 'inline-block' }}>{` `}Please use</span>
+            </p>
+            <p style={{ textAlign: 'left', color: '#ff9933' }}>Legacy or P2TR</p>
+            <p style={{ textAlign: 'left' }}>
+              <span style={{ display: 'inline-block' }}>Meanwhile,</span>
+              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}DO NOT</span>
+              <span style={{ display: 'inline-block' }}>{` `}mix other assets in your wallet.</span>
+            </p>
+          </div>,
+        );
+      } else {
+        setVisible(true);
+        setIsAllowedAddressType(false);
+        setModalContent(
+          <div style={{ textAlign: 'left' }}>
+            <p style={{ textAlign: 'left' }}>
+              <span style={{ display: 'inline-block' }}>Please ensure that this address is used</span>
+              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}EXCLUSIVELY FOR ARC-20</span>
+              <span style={{ display: 'inline-block' }}>{` `}assets and is not mixed with other assets such as</span>
+            </p>
+            <p style={{ textAlign: 'left', color: '#ff9933' }}>BRC20 or Inscriptions.</p>
+            <p style={{ textAlign: 'left' }}>
+              <span style={{ display: 'inline-block' }}>Otherwise, there is a risk of your assets being</span>
+              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}LOST</span>
+              <span style={{ display: 'inline-block' }}>{` `}during the transfer.</span>
+            </p>
+          </div>,
+        );
+      }
     }
 
     return p2trAddress;
@@ -236,8 +263,24 @@ function App() {
               style={{ padding: 16, borderRadius: 16, backgroundColor: '#000', marginRight: 16 }}
               onTouchEnd={() => {
                 if (address && address !== '') {
+                  setVisible(true);
+                  setIsAllowedAddressType(false);
+                  setModalContent(
+                    <div style={{ textAlign: 'left' }}>
+                      <p style={{ textAlign: 'left' }}>
+                        <span style={{ display: 'inline-block' }}>Please make sure this address is</span>
+                        <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}NOT</span>
+                        <span style={{ display: 'inline-block' }}>{` `}mixed with other assets, for examples:</span>
+                      </p>
+                      <p style={{ textAlign: 'left', color: '#ff9933' }}>BRC20, Inscriptions</p>
+                      <p style={{ textAlign: 'left' }}>
+                        <span style={{ display: 'inline-block' }}>Otherwise your assets might be</span>
+                        <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}LOST</span>
+                        <span style={{ display: 'inline-block' }}>{` `}during transfer</span>
+                      </p>
+                    </div>,
+                  );
                   window.navigator.clipboard.writeText(address);
-
                   showToast({ content: 'Copy Success', type: 'success' });
                 }
               }}
@@ -370,6 +413,7 @@ function App() {
         >
           {isAllowedAddressType && relatedAtomicalId ? (
             <Transfer
+              originAddressType={originAddressType}
               originAddress={originAddress}
               primaryAddress={address!}
               xonlyPubHex={xOnlyPubHex!}
@@ -403,19 +447,22 @@ function App() {
               >
                 {modalContent}
               </div>
-              <div
-                style={{
-                  backgroundColor: '#3399ff',
-                  color: '#fff',
-                  padding: '30px 40px',
-                  maxWidth: 400,
-                }}
-                onTouchStart={() => {
-                  setVisible(false);
-                }}
-              >
-                I Understand
-              </div>
+              {modalClosable ? (
+                <div
+                  style={{
+                    backgroundColor: '#3399ff',
+                    color: '#fff',
+                    padding: '30px 40px',
+                    maxWidth: 400,
+                  }}
+                  onTouchStart={() => {
+                    setIsAllowedAddressType(true);
+                    setVisible(false);
+                  }}
+                >
+                  I Understand
+                </div>
+              ) : null}
             </div>
           )}
         </div>
