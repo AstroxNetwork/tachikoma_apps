@@ -68,7 +68,7 @@ function App() {
         setBalanceMap(atomicals_balances as IAtomicalBalances);
         const allUtxos = await service.electrumApi.getUnspentAddress(address);
         const ordUtxosResoponse = await provider.getInscriptions(address);
-        const { list: ordList } = ordUtxosResoponse;
+        const { list: ordList, total } = ordUtxosResoponse;
 
         if (atomicals_utxos.length > 0) {
           setAtomUtxos(atomicals_utxos);
@@ -81,7 +81,7 @@ function App() {
         const _nonAtomUtxos: UTXO[] = [];
         let nonAtomUtxosValue = 0;
 
-        if (ordList.length === 0) {
+        if (total === 0 || total === undefined) {
           for (let i = 0; i < allUtxos.utxos.length; i++) {
             const utxo = allUtxos.utxos[i];
             if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
@@ -90,15 +90,12 @@ function App() {
             }
           }
         } else {
-          console.log('shit 1');
           for (let i = 0; i < allUtxos.utxos.length; i++) {
             const utxo = allUtxos.utxos[i];
             if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
               _nonAtomUtxos.push(utxo);
             }
           }
-          console.log('ordList.length: ' + ordList.length);
-          console.log('_nonAtomUtxos length:' + _nonAtomUtxos.length);
 
           for (let j = 0; j < _nonAtomUtxos.length; j++) {
             const utxo = _nonAtomUtxos[j];
