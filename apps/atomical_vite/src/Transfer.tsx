@@ -212,8 +212,12 @@ export const Transfer = ({
       selectedUtxos,
       outputs: amountToSendNext,
     };
-    const txHex = await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, false);
-
+    let txHex: any;
+    try {
+      txHex = await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, false);
+    } catch (error) {
+      txHex = undefined;
+    }
     if (txHex) {
       setTxStatus(TransferStatus.Sending);
       try {
@@ -234,7 +238,8 @@ export const Transfer = ({
       }
       // signed success, continue sending
     } else {
-      console.log('dispatch signing error');
+      setTxMessage('Unable To Sign');
+      setTxStatus(TransferStatus.Failed);
     }
   }
 
@@ -335,6 +340,7 @@ export const Transfer = ({
       console.log(printedPsbt);
 
       try {
+        console.log({ originAddressType });
         const s = await provider.signPsbt(originAddress, printedPsbt, { addressType: originAddressType === 'p2pkh' ? 'p2pkhtr' : 'p2tr' });
         console.log({ s });
         const signedPsbt = bitcoin.Psbt.fromHex(s);
@@ -345,7 +351,7 @@ export const Transfer = ({
         return tx.toHex();
       } catch (error) {
         console.log(error);
-        return undefined;
+        throw 'Unable to sign transaction';
       }
     }
   }

@@ -16,6 +16,13 @@ export class AtomicalService {
       throw 'socket open error';
     }
   }
+  async close() {
+    try {
+      return await this.electrumApi.close();
+    } catch (error) {
+      throw 'socket close error';
+    }
+  }
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {
     try {

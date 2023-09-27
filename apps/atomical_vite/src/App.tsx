@@ -12,6 +12,7 @@ import { showToast } from '@uni/toast';
 import { Transfer } from './Transfer';
 import { Overlay, Popup } from 'react-vant';
 import { UTXO } from './interfaces/utxo';
+import { MempoolUtxo, mempoolService } from './clients/mempool';
 
 const provider = new AstroXWizzInhouseProvider();
 
@@ -66,15 +67,24 @@ function App() {
         console.log({ atomicals_confirmed });
         setBalance(atomicals_confirmed);
         setBalanceMap(atomicals_balances as IAtomicalBalances);
-        const allUtxos = await service.electrumApi.getUnspentAddress(address);
+
+        const _allUtxos = await service.electrumApi.getUnspentAddress(address);
+        const mempoolUtxos: MempoolUtxo[] = await mempoolService.getUtxo(address);
+        const confirmedUtxos: UTXO[] = [];
+        for (let i = 0; i < _allUtxos.utxos.length; i++) {
+          const found = mempoolUtxos.findIndex(item => item.txid === _allUtxos.utxos[i].txid && item.status.confirmed === true);
+          if (found > -1) {
+            confirmedUtxos.push(_allUtxos.utxos[i]);
+          }
+        }
         const ordUtxosResoponse = await provider.getInscriptions(address);
         const { list: ordList, total } = ordUtxosResoponse;
 
         if (atomicals_utxos.length > 0) {
           setAtomUtxos(atomicals_utxos);
         }
-        if (allUtxos.utxos.length > 0) {
-          setAllUxtos(allUtxos.utxos);
+        if (_allUtxos.utxos.length > 0) {
+          setAllUxtos(confirmedUtxos);
         }
 
         const nonAtomUtxos: UTXO[] = [];
@@ -82,16 +92,16 @@ function App() {
         let nonAtomUtxosValue = 0;
 
         if (total === 0 || total === undefined) {
-          for (let i = 0; i < allUtxos.utxos.length; i++) {
-            const utxo = allUtxos.utxos[i];
+          for (let i = 0; i < confirmedUtxos.length; i++) {
+            const utxo = confirmedUtxos[i];
             if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
               nonAtomUtxos.push(utxo);
               nonAtomUtxosValue += utxo.value;
             }
           }
         } else {
-          for (let i = 0; i < allUtxos.utxos.length; i++) {
-            const utxo = allUtxos.utxos[i];
+          for (let i = 0; i < confirmedUtxos.length; i++) {
+            const utxo = confirmedUtxos[i];
             if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
               _nonAtomUtxos.push(utxo);
             }
@@ -196,6 +206,7 @@ function App() {
         try {
           await getWalletInfo();
         } catch (error) {
+          // await service.close();
           console.log('get wallet info error + ', error);
           showToast({ content: `${error}`, type: 'fail' });
         }
@@ -343,6 +354,7 @@ function App() {
                   showToast({ content: 'Balance Updated', type: 'success' });
                 } catch (error) {
                   console.log(error);
+                  // await service.close();
                   showToast({ content: `${error}`, type: 'fail' });
                 }
               }}
