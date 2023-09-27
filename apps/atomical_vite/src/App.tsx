@@ -110,16 +110,17 @@ function App() {
   };
 
   const getAddress = async () => {
-    const accs = await provider.requestAccounts();
-    const p2trPub = await provider.getPublicKey(accs[0]);
-    setOriginAddress(accs[0]);
-    const xpub = (toXOnly(Buffer.from(p2trPub, 'hex')) as Buffer).toString('hex');
-    setXonlyPubHex(xpub);
+    // const accs = await provider.requestAccounts();
+    // const p2trPub = await provider.getPublicKey(accs[0]);
+    // setOriginAddress(accs[0]);
+    setOriginAddress('bc1p08wmugdm9xk8l0ckntcu9nu47rh78ue8jfpmdzc0rtckdweea2fq89uqhr');
+    // const xpub = (toXOnly(Buffer.from(p2trPub, 'hex')) as Buffer).toString('hex');
+    setXonlyPubHex('133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b');
     // setXonlyPubHex('133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b');
-    const p2trAddress = fromPubToP2tr(p2trPub);
-    const currentAddressType = await provider.getAddressType(accs[0]);
+    const p2trAddress = 'bc1p08wmugdm9xk8l0ckntcu9nu47rh78ue8jfpmdzc0rtckdweea2fq89uqhr'; // fromPubToP2tr(p2trPub);
+    const currentAddressType = 'p2pkh'; // await provider.getAddressType(accs[0]);
     // const p2trAddress = 'bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'; //fromPubToP2tr(p2trPub);
-    setAddress(p2trAddress);
+    setAddress('bc1p08wmugdm9xk8l0ckntcu9nu47rh78ue8jfpmdzc0rtckdweea2fq89uqhr');
 
     setOriginAddressType(currentAddressType);
 
@@ -198,40 +199,43 @@ function App() {
 
   const handleBalanceMap = () => {
     if (balanceMap) {
-      return Object.keys(balanceMap).map(key => {
-        const data = balanceMap[key];
-        return (
-          <div
-            style={{
-              padding: 16,
-              // backgroundColor: '#000',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              display: 'flex',
-              borderBottom: '1px solid #e5e7eb',
-              color: '#fff',
-              fontSize: 18,
-            }}
-            onTouchEnd={() => {
-              console.log({ id: data.atomical_id });
-              setRelatedAtomicalId(data.atomical_id);
-              setRelatedConfirmed(data.confirmed);
-              setRelatedType(data.type);
-              setRelatedTicker(data.ticker);
-              const utxos = handleUtxos(data.atomical_id);
-              console.log({ utxos });
-              setRelatedUtxos(utxos);
-              setVisible(true);
-              // setModalContent('Transaction will be implemented soon');
-            }}
-            key={key}
-          >
-            <div>{`\$${data.ticker.toUpperCase()}`}</div>
-            <div>{data.confirmed}</div>
-          </div>
-        );
-      });
+      return Object.values(balanceMap)
+        .filter(v => {
+          return v.type === 'FT';
+        })
+        .map(data => {
+          return (
+            <div
+              style={{
+                padding: 16,
+                // backgroundColor: '#000',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                display: 'flex',
+                borderBottom: '1px solid #e5e7eb',
+                color: '#fff',
+                fontSize: 18,
+              }}
+              onTouchEnd={() => {
+                console.log({ id: data.atomical_id });
+                setRelatedAtomicalId(data.atomical_id);
+                setRelatedConfirmed(data.confirmed);
+                setRelatedType(data.type);
+                setRelatedTicker(data.ticker);
+                const utxos = handleUtxos(data.atomical_id);
+                console.log({ utxos });
+                setRelatedUtxos(utxos);
+                setVisible(true);
+                // setModalContent('Transaction will be implemented soon');
+              }}
+              key={data.atomical_id}
+            >
+              <div>{`\$${data.ticker.toUpperCase()}`}</div>
+              <div>{data.confirmed}</div>
+            </div>
+          );
+        });
     }
   };
 
