@@ -1,12 +1,18 @@
-import { Collapse, Modal } from "@/components";
+import { Collapse, Modal, Toast } from "@/components";
 import { useNavigate } from "react-router-dom";
 import { EditSOutline } from "antd-mobile-icons";
-import { useAtomicalWalletInfo } from "@/services/hooks";
+import { useAddress, useAtomicalWalletInfo } from "@/services/hooks";
 import Selector from "@/components/components/selector";
+import QrCode from "qrcode.react";
+import { useMemo } from "react";
+
 const IndexPage = () => {
   const navigate = useNavigate();
-  const address =
-    "bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv";
+  const {
+    address,
+    // isAllowedAddressType,
+    // xonlyPubHex,
+  } = useAddress();
   const {
     balance,
     atomUtxos,
@@ -15,11 +21,27 @@ const IndexPage = () => {
     balanceMap,
     allUtxos,
   } = useAtomicalWalletInfo(address);
+
+  const size = useMemo(() => atomUtxos.length, [atomUtxos]);
   const modal = () => {
     Modal.show({
       closeOnMaskClick: true,
-      title: "test",
-      content: "asfdafafadfsadf",
+      title: <span className="text-strong-color">Receive</span>,
+      content: (
+        <div className="flex flex-col items-center">
+          <QrCode value={address} size={150} includeMargin />
+          <p className="text-center mt-2 break-all">{address}</p>
+          <button
+            className="w-24 mt-4 bg-primary text-white py-2 px-4 text-center rounded-full"
+            onClick={() => {
+              navigator.clipboard.writeText(address);
+              Toast.show("Copied!");
+            }}
+          >
+            Copy
+          </button>
+        </div>
+      ),
     });
   };
 
@@ -76,19 +98,25 @@ const IndexPage = () => {
               key="2"
               title={
                 <div className="flex justify-between">
-                  ATOM({atomUtxos.length})<span>{balance}</span>
+                  <span>{`ATOM(${size})`}</span>
+                  <span>{balance}</span>
                 </div>
               }
+              arrow={<div className="h-5 w-5"></div>}
+              disabled
             >
-              <Selector
-                ellipsis={true}
-                options={atomUtxos.map((o) => ({
-                  label: o.value.toString(),
-                  value: o.txid,
-                }))}
-                className="bg-body-bg"
-                disabled
-              />
+              {/* <div className="h-96"></div> */}
+              <div>
+                <Selector
+                  ellipsis={true}
+                  options={atomUtxos.map((o) => ({
+                    label: o.value.toString(),
+                    value: o.txid,
+                  }))}
+                  className="bg-body-bg"
+                  disabled
+                />
+              </div>
             </Collapse.Panel>
           </Collapse>
           <div className="h-10"></div>

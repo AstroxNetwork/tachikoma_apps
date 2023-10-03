@@ -21,10 +21,10 @@ const Selector: React.FC<SelectorProps> = (props) => {
   console.log("selected", selected?.includes("#1031"));
   return (
     <div className="flex justify-between flex-wrap">
-      {options.map((item) => {
+      {options.map((item, index) => {
         return (
           <div
-            key={item.value}
+            key={index}
             className={`flex flex-col p-2  rounded-lg basis-[48%] mt-4 ${
               className ? className : "bg-card-bg"
             }`}

@@ -18,6 +18,7 @@ export class AtomicalService {
   }
 
   async walletInfo(address: string, verbose: boolean): Promise<any> {
+    await this.ensureService();
     const { scripthash } = detectAddressTypeToScripthash(address);
     const res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
     let history = undefined;

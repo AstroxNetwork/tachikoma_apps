@@ -39,7 +39,7 @@ importers:
         version: 1.0.1
       autoprefixer:
         specifier: ^10.4.14
-        version: 10.4.14(postcss@8.4.27)
+        version: 10.4.14(postcss@8.4.30)
       bitcoinjs-lib:
         specifier: ^6.1.5
         version: 6.1.5
@@ -185,6 +185,9 @@ importers:
       process:
         specifier: ^0.11.10
         version: 0.11.10
+      qrcode.react:
+        specifier: ^3.1.0
+        version: 3.1.0(react@18.2.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -306,7 +309,7 @@ importers:
         version: 1.0.1
       autoprefixer:
         specifier: ^10.4.14
-        version: 10.4.14(postcss@8.4.27)
+        version: 10.4.14(postcss@8.4.30)
       create-app-shared:
         specifier: ^1.2.6
         version: 1.2.6
@@ -465,7 +468,7 @@ importers:
         version: 1.0.1
       autoprefixer:
         specifier: ^10.4.14
-        version: 10.4.14(postcss@8.4.27)
+        version: 10.4.14(postcss@8.4.30)
       bitcoinjs-lib:
         specifier: ^6.1.5
         version: 6.1.5
@@ -3807,7 +3810,7 @@ packages:
     dependencies:
       '@babel/core': 7.22.9
       postcss: 7.0.39
-      postcss-syntax: 0.36.2(postcss@8.4.27)
+      postcss-syntax: 0.36.2(postcss@8.4.30)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -3820,7 +3823,7 @@ packages:
       postcss-syntax: '>=0.36.2'
     dependencies:
       postcss: 7.0.39
-      postcss-syntax: 0.36.2(postcss@8.4.27)
+      postcss-syntax: 0.36.2(postcss@8.4.30)
       remark: 13.0.0
       unist-util-find-all-after: 3.0.2
     transitivePeerDependencies:
@@ -5454,21 +5457,6 @@ packages:
       caniuse-db: 1.0.30001519
       postcss: 2.2.6
 
-  /autoprefixer@10.4.14(postcss@8.4.27):
-    resolution: {integrity: sha512-FQzyfOsTlwVzjHxKEqRIAdJx9niO6VCBCoEwax/VLSoQF29ggECcPuBqUMZ+u8jCZOPSy8b8/8KnuFbp0SaFZQ==}
-    engines: {node: ^10 || ^12 || >=14}
-    hasBin: true
-    peerDependencies:
-      postcss: ^8.1.0
-    dependencies:
-      browserslist: 4.21.9
-      caniuse-lite: 1.0.30001517
-      fraction.js: 4.2.0
-      normalize-range: 0.1.2
-      picocolors: 1.0.0
-      postcss: 8.4.27
-      postcss-value-parser: 4.2.0
-
   /autoprefixer@10.4.14(postcss@8.4.30):
     resolution: {integrity: sha512-FQzyfOsTlwVzjHxKEqRIAdJx9niO6VCBCoEwax/VLSoQF29ggECcPuBqUMZ+u8jCZOPSy8b8/8KnuFbp0SaFZQ==}
     engines: {node: ^10 || ^12 || >=14}
@@ -5483,7 +5471,6 @@ packages:
       picocolors: 1.0.0
       postcss: 8.4.30
       postcss-value-parser: 4.2.0
-    dev: true
 
   /autoprefixer@9.8.8:
     resolution: {integrity: sha512-eM9d/swFopRt5gdJ7jrpCwgvEMIayITpojhkkSMRsFHYuH5bkSQ4p/9qTEHtmNudUZh22Tehu7I6CxAW0IXTKA==}
@@ -9735,7 +9722,7 @@ packages:
       debug:
         optional: true
     dependencies:
-      debug: 4.3.4(supports-color@6.1.0)
+      debug: 4.3.4
     dev: false
 
   /for-each@0.3.3:
@@ -11790,6 +11777,7 @@ packages:
 
   /loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
+    hasBin: true
     dependencies:
       js-tokens: 4.0.0
 
@@ -13459,7 +13447,7 @@ packages:
     dependencies:
       htmlparser2: 3.10.1
       postcss: 7.0.39
-      postcss-syntax: 0.36.2(postcss@8.4.27)
+      postcss-syntax: 0.36.2(postcss@8.4.30)
     dev: true
 
   /postcss-import@12.0.1:
@@ -13616,7 +13604,7 @@ packages:
       util-deprecate: 1.0.2
     dev: true
 
-  /postcss-syntax@0.36.2(postcss@8.4.27):
+  /postcss-syntax@0.36.2(postcss@8.4.30):
     resolution: {integrity: sha512-nBRg/i7E3SOHWxF3PpF5WnJM/jQ1YpY9000OaVXlAQj6Zp/kIqJxEDWIZ67tAd7NLuk7zqN4yqe9nc0oNAOs1w==}
     peerDependencies:
       postcss: '>=5.0.0'
@@ -13637,7 +13625,7 @@ packages:
       postcss-scss:
         optional: true
     dependencies:
-      postcss: 8.4.27
+      postcss: 8.4.30
     dev: true
 
   /postcss-value-parser@3.3.1:
@@ -13685,6 +13673,7 @@ packages:
       nanoid: 3.3.6
       picocolors: 1.0.0
       source-map-js: 1.0.2
+    dev: false
 
   /postcss@8.4.30:
     resolution: {integrity: sha512-7ZEao1g4kd68l97aWG/etQKPKq07us0ieSZ2TnFDk11i0ZfDW2AwKHYU8qv4MZKqN2fdBfg+7q0ES06UA73C1g==}
@@ -13846,6 +13835,14 @@ packages:
   /qrcode-terminal@0.12.0:
     resolution: {integrity: sha512-EXtzRZmC+YGmGlDFbXKxQiMZNwCLEO6BANKXG4iCtSIM0yqc/pappSx3RIKr4r0uh5JsBckOXeKrB3Iz7mdQpQ==}
     hasBin: true
+    dev: false
+
+  /qrcode.react@3.1.0(react@18.2.0):
+    resolution: {integrity: sha512-oyF+Urr3oAMUG/OiOuONL3HXM+53wvuH3mtIWQrYmsXoAq0DkvZp2RYUWFSMFtbdOpuS++9v+WAkzNVkMlNW6Q==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      react: 18.2.0
     dev: false
 
   /qs@6.11.0:
@@ -15836,7 +15833,7 @@ packages:
       postcss-sass: 0.4.4
       postcss-scss: 2.1.1
       postcss-selector-parser: 6.0.13
-      postcss-syntax: 0.36.2(postcss@8.4.27)
+      postcss-syntax: 0.36.2(postcss@8.4.30)
       postcss-value-parser: 4.2.0
       resolve-from: 5.0.0
       slash: 3.0.0

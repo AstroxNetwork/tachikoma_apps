@@ -14,11 +14,9 @@
 .@{class-prefix-modal}-wrap {
   position: fixed;
   z-index: 1;
-  top: 50%;
+  top: 40%;
   left: 50%;
-  width: auto;
-  min-width: 80%;
-  max-width: 75vw;
+  width: 90vw;
   transform: translate(-50%, -50%);
 
 }
@@ -39,35 +37,35 @@
     flex: none;
   }
 
-  >.adm-modal-content {
+  >.rc-modal-content {
     flex: auto;
   }
 
-  &:not(.adm-modal-with-image) {
+  &:not(.rc-modal-with-image) {
     padding-top: 20px;
   }
 
-  .adm-modal-image-container {
+  .rc-modal-image-container {
     margin-bottom: 12px;
     max-height: 40vh;
     overflow-y: scroll;
   }
 
-  .adm-modal-header {
+  .rc-modal-header {
     margin-bottom: 8px;
     padding: 0 12px;
   }
 
-  .adm-modal-title {
+  .rc-modal-title {
     margin-bottom: 8px;
     padding: 0 12px;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 24px;
     line-height: 25px;
     text-align: center;
   }
 
-  .adm-modal-content {
+  .rc-modal-content {
     padding: 0 12px 12px;
     max-height: 70vh;
     overflow-x: hidden;
@@ -77,17 +75,17 @@
     color: #333;
   }
 
-  .adm-modal-close {
+  .rc-modal-close {
     position: absolute;
     right: 8px;
     top: 8px;
-    color: var(--adm-color-weak);
+    color: var(--rc-color-weak);
     padding: 4px;
     font-size: 18px;
   }
 }
 
-.adm-modal-footer {
+.rc-modal-footer {
   user-select: none;
   padding: 8px 12px 12px;
 
@@ -96,15 +94,15 @@
     height: 8px;
   }
 
-  &.adm-space {
+  &.rc-space {
     --gap-vertical: 20px;
   }
 
-  .adm-modal-button {
+  .rc-modal-button {
     font-size: 18px;
     line-height: 25px;
 
-    &:not(.adm-modal-button-primary) {
+    &:not(.rc-modal-button-primary) {
       padding-top: 0;
       padding-bottom: 0;
 
