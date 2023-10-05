@@ -65,8 +65,16 @@ function App() {
         const { atomicals_confirmed, atomicals_balances, atomicals_utxos } = data;
         console.log(data);
         console.log({ atomicals_confirmed });
-        setBalance(atomicals_confirmed);
+
         setBalanceMap(atomicals_balances as IAtomicalBalances);
+        let ftBalance = 0;
+        Object.keys(atomicals_balances as IAtomicalBalances).map(e => {
+          const atom = (atomicals_balances as IAtomicalBalances)[e];
+          if (atom.type === 'FT') {
+            ftBalance += atom.confirmed;
+          }
+        });
+        setBalance(ftBalance);
 
         const _allUtxos = await service.electrumApi.getUnspentAddress(address);
         const mempoolUtxos: MempoolUtxo[] = await mempoolService.getUtxo(address);
