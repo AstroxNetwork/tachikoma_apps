@@ -8,10 +8,10 @@ export interface IUnspentResponse {
 }
 
 export interface ElectrumApiInterface {
-  close: () => Promise<void>;
-  open: () => Promise<boolean>;
-  resetConnection: () => Promise<boolean>;
-  isOpen: () => boolean;
+  // close: () => Promise<void>;
+  // open: () => Promise<boolean>;
+  resetConnection: () => Promise<void>;
+  // isOpen: () => boolean;
   sendTransaction: (rawtx: string) => Promise<string>;
   getUnspentAddress: (address: string) => Promise<IUnspentResponse>;
   getUnspentScripthash: (address: string) => Promise<IUnspentResponse>;

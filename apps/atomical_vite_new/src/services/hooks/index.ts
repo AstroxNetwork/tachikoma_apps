@@ -10,6 +10,7 @@ const provider = new AstroXWizzInhouseProvider();
 
 const ELECTRUMX_HTTP_PROXY = "https://ep.atomicals.xyz/proxy";
 const api = ElectrumApi.createClient(ELECTRUMX_HTTP_PROXY);
+//@ts-ignore
 const atomicalService = new AtomicalService(api);
 
 interface UseAtomicalService {
@@ -154,7 +155,7 @@ export function useAddress() {
   const [originAddress, setOriginAddress] = useState<string | undefined>(
     undefined
   );
-  const [addressType, setAddressType] = useState<string | undefined>("p2wpkh"); // ['p2pkh', 'p2tr', 'p2wpkh']
+  const [addressType, setAddressType] = useState<string | undefined>(); // ['p2pkh', 'p2tr', 'p2wpkh']
   const [accs, setAccs] = useState<string[]>([]);
   const [xonlyPubHex, setXonlyPubHex] = useState<string | undefined>(undefined);
   const [isAllowedAddressType, setIsAllowedAddressType] = useState<

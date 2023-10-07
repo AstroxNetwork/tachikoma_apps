@@ -197,7 +197,7 @@ const IndexPage = () => {
         </div>
       </div>
       <Mask visible={visible}>
-        <div className="bg-card-bg w-full p-4 mt-4 absolute bottom-0 left-0">
+        <div className="bg-card-bg w-full p-4 mt-4 absolute bottom-24 left-0">
           {addressType === "p2wpkh" || addressType === "p2sh" ? (
             <>
               <p>

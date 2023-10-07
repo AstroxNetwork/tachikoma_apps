@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import IndexPage from "../page";
 import { Layout } from "../layout";
 import Transaction from "../page/transaction";
@@ -7,13 +7,13 @@ import Transaction from "../page/transaction";
 
 export const Router = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<IndexPage />}></Route>
           <Route path="/transation" element={<Transaction />}></Route>
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
