@@ -4,6 +4,7 @@ import { EditSOutline } from "antd-mobile-icons";
 import { useAddress, useAtomicalWalletInfo } from "@/services/hooks";
 import QrCode from "qrcode.react";
 import { IAtomicalBalanceItem } from "@/interfaces/api";
+import { ICON_COPY } from "@/utils/resource";
 
 const IndexPage = () => {
   const navigate = useNavigate();
@@ -95,7 +96,15 @@ const IndexPage = () => {
         <div className="bg-card-bg w-full p-4 rounded-md mt-4">
           <div className="flex items-center text-base">
             {address?.slice(0, 6)}...{address?.slice(-4)}
-            <EditSOutline />
+            <img
+              src={ICON_COPY}
+              className="w-4 cursor-pointer"
+              alt=""
+              onClick={() => {
+                navigator.clipboard.writeText(address);
+                Toast.show("Copied!");
+              }}
+            />
           </div>
           <div className="text-center py-10">
             <h1 className="text-3xl font-bold">

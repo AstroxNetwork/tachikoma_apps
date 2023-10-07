@@ -376,7 +376,7 @@ const Transaction = () => {
       >
         <div className="app-header">
           <div className="pt-4 flex items-center">
-            <LeftOutline className="text-2xl" onClick={() => navigate(-1)} />
+            <img className="text-2xl w-5" onClick={() => navigate(-1)} />
             <h1 className="text-xl ml-4">
               Transfer {item?.ticker.toLocaleUpperCase()}
             </h1>
