@@ -14,30 +14,26 @@ const atomicalService = new AtomicalService(api);
 
 interface UseAtomicalService {
   service: AtomicalService | undefined;
-  isTimeout: boolean;
+  // isTimeout: boolean;
 }
 
-export function useAtomicalService(timeout = 5000): UseAtomicalService {
+export function useAtomicalService(): UseAtomicalService {
   const [service, setService] = useState<AtomicalService | undefined>();
-  const [isTimeout, setIsTimeout] = useState<boolean>(false);
   const connectRef = useRef<boolean>();
   useEffect(() => {
     (async () => {
-      setTimeout(() => {
-        if (!connectRef.current) {
-          setIsTimeout(true);
-        }
-      }, timeout);
-      if (!atomicalService.isOpen) {
-        await atomicalService.electrumApi.resetConnection();
-      }
+      // setTimeout(() => {
+      //   if (!connectRef.current) {
+      //     setIsTimeout(true);
+      //   }
+      // }, timeout);
+      await atomicalService.electrumApi.resetConnection();
       connectRef.current = true;
       setService(atomicalService);
     })();
   }, []);
   return {
-    service: atomicalService.isOpen && service,
-    isTimeout,
+    service,
   };
 }
 

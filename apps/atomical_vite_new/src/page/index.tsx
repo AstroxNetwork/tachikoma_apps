@@ -1,6 +1,5 @@
 import { List, Modal, Toast } from "@/components";
 import { useNavigate } from "react-router-dom";
-import { EditSOutline } from "antd-mobile-icons";
 import {
   useAddress,
   useAtomicalService,

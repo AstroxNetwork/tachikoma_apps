@@ -68,7 +68,6 @@ const Transaction = () => {
   // const address =
   //   "bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv";
   const {
-    balance,
     atomUtxos,
     fundingBalance,
     nonAtomUtxos,
