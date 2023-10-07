@@ -66,6 +66,9 @@ function App() {
         const walletInfo = await service.walletInfo(address, false);
         const { data } = walletInfo;
         const { atomicals_confirmed, atomicals_balances, atomicals_utxos } = data;
+        if (atomicals_utxos.length > 0) {
+          setAtomUtxos(atomicals_utxos);
+        }
         console.log(data);
         console.log({ atomicals_confirmed });
 
@@ -100,9 +103,6 @@ function App() {
         }
         console.log({ mempoolBalance });
 
-        if (atomicals_utxos.length > 0) {
-          setAtomUtxos(atomicals_utxos);
-        }
         if (_allUtxos.utxos.length > 0) {
           setAllUxtos(confirmedUtxos);
         }

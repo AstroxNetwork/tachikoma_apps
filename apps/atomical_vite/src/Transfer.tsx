@@ -27,6 +27,7 @@ export enum TransferStatus {
   Sending,
   Success,
   Failed,
+  Canceled,
 }
 
 const flexCenter = { display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', flex: 1, padding: 32 };
@@ -219,6 +220,7 @@ export const Transfer = ({
       console.log('before buildAndSignTx');
       txHex = await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, false);
     } catch (error) {
+      console.log('failed buildAndSignTx');
       txHex = undefined;
     }
     if (txHex) {
@@ -241,8 +243,10 @@ export const Transfer = ({
       }
       // signed success, continue sending
     } else {
+      console.log("can't sign tx");
       setTxMessage('Unable To Sign');
-      setTxStatus(TransferStatus.Failed);
+      setTxStatus(TransferStatus.Canceled);
+      console.log("can't sign tx");
     }
   }
 
@@ -347,7 +351,9 @@ export const Transfer = ({
       try {
         console.log({ originAddressType });
         const s = await provider.signPsbt(originAddress, printedPsbt, { addressType: originAddressType === 'p2pkh' ? 'p2pkhtr' : 'p2tr' });
-        console.log({ s });
+        if (typeof s !== 'string' || !isHexString(s)) {
+          throw 'User Cancel or Unable to sign';
+        }
         const signedPsbt = bitcoin.Psbt.fromHex(s);
         // signedPsbt.finalizeAllInputs();
         const tx = signedPsbt.extractTransaction();
@@ -481,6 +487,27 @@ export const Transfer = ({
         break;
       case TransferStatus.None:
         comp = submitTing();
+        break;
+      case TransferStatus.Canceled:
+        comp = (
+          <div style={flexCenter as CSSProperties}>
+            <h3 style={{ marginTop: 32, marginBottom: 32 }}>Transaction Canceled! </h3>
+            <div
+              style={{
+                fontSize: 16,
+                backgroundColor: '#3399ff',
+                borderRadius: 24,
+                padding: 24,
+                width: '100%',
+              }}
+              onTouchEnd={() => {
+                setVisible(false);
+              }}
+            >
+              {`Go Back`}
+            </div>
+          </div>
+        );
         break;
       default:
         comp = submitTing();
@@ -643,3 +670,10 @@ export const calculateFTFundsRequired = (
     expectedSatoshisDeposit,
   };
 };
+
+export function isHexString(str: string) {
+  const hexRegex = /^0x[0-9a-fA-F]+$/;
+  // 检查是否包含 0x/0X 前缀，如果有，忽略它
+  const normalizedStr = str.startsWith('0x') || str.startsWith('0X') ? str.slice(2) : str;
+  return hexRegex.test('0x' + normalizedStr);
+}
