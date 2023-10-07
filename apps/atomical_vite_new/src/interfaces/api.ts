@@ -102,13 +102,7 @@ export interface AmountToSend {
 export interface IAtomicalsInfo {
   confirmed: number;
   type: "FT" | "NFT";
-  utxos: Array<{
-    txid: string;
-    script: any;
-    value: number;
-    index: number;
-    height: number;
-  }>;
+  utxos: ISelectedUtxo[];
 }
 
 export interface IAtomicalBalances {

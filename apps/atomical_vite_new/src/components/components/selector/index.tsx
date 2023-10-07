@@ -25,7 +25,7 @@ const Selector: React.FC<SelectorProps> = (props) => {
         return (
           <div
             key={index}
-            className={`flex flex-col p-2  rounded-lg basis-[48%] mt-4 ${
+            className={`flex flex-col p-2  rounded-lg basis-[48%] mb-4 ${
               className ? className : "bg-card-bg"
             }`}
             onClick={() => {

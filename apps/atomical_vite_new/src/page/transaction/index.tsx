@@ -8,13 +8,14 @@ import {
   useAtomicalWalletInfo,
 } from "@/services/hooks";
 import { LeftOutline } from "antd-mobile-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as bitcoin from "bitcoinjs-lib";
 import ecc from "@bitcoinerlab/secp256k1";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
 import { ICON_ARROW } from "@/utils/resource";
+import { Switch } from "antd-mobile";
 const provider = new AstroXWizzInhouseProvider();
 bitcoin.initEccLib(ecc);
 
@@ -49,22 +50,30 @@ export interface TransferFtConfigInterface {
 }
 
 const Transaction = () => {
+  const query = new URLSearchParams(window.location.search);
+  const atomical_id = query.get("atomical_id");
   const [checkeds, setCheckeds] = useState<string[]>([]);
   const [visible, setVisible] = useState(false);
+  const [isMerge, setIsMerge] = useState(false);
+  const [sendAddress, setSendAddress] = useState("");
+  const [fee, setFee] = useState(0);
   const {
     address,
     originAddress,
     // isAllowedAddressType,
     xonlyPubHex,
   } = useAddress();
+  const [viewType, setViewType] = useState<"main" | "sended">("main");
+  const [txid, setTxid] = useState<string | undefined>(undefined);
+  const [sendLoading, setSendLoading] = useState(false);
   // const address =
   //   "bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv";
   const {
-    // balance,
+    balance,
     atomUtxos,
-    // fundingBalance,
+    fundingBalance,
     nonAtomUtxos,
-    // balanceMap,
+    balanceMap,
     // allUtxos,
   } = useAtomicalWalletInfo(address);
   const service = useAtomicalService();
@@ -72,6 +81,51 @@ const Transaction = () => {
     undefined
   );
   const navigate = useNavigate();
+  const item = balanceMap && balanceMap[atomical_id as string];
+  const relatedAtomUtxos = atomUtxos
+    ? atomUtxos.filter((o) => o.atomicals[0] === atomical_id)
+    : [];
+
+  const { selectedAmount, selectedUtxos, amountToSend } = useMemo(() => {
+    let selectedAmount = 0;
+    let _amountsToSend: AmountToSend[] = [];
+    const selectedUtxos: ISelectedUtxo[] = [];
+    for (const utxo of atomUtxos) {
+      if (checkeds.includes(utxo.txid)) {
+        selectedAmount += utxo.value;
+        selectedUtxos.push(utxo);
+        if (!isMerge) {
+          _amountsToSend.push({
+            address: sendAddress,
+            value: utxo.value,
+          });
+        }
+      }
+    }
+    if (isMerge) {
+      _amountsToSend = [];
+      _amountsToSend.push({
+        address: sendAddress,
+        value: selectedAmount,
+      });
+    }
+
+    const obj: TransferFtConfigInterface = {
+      atomicalsInfo: {
+        confirmed: item?.confirmed,
+        type: item?.type,
+        utxos: relatedAtomUtxos,
+      },
+      selectedUtxos,
+      outputs: _amountsToSend,
+    };
+    buildAndSignTx(obj, address, xonlyPubHex, 20, true);
+    return { selectedAmount, selectedUtxos, amountToSend: _amountsToSend };
+  }, [checkeds, isMerge]);
+
+  console.log("selectedAmount", selectedAmount);
+  console.log("selectedUtxos", selectedUtxos);
+  console.log("amountToSend", amountToSend);
 
   const validateAddress = (address: string): boolean => {
     try {
@@ -85,39 +139,44 @@ const Transaction = () => {
   };
 
   async function handleSubmit() {
-    // const obj: TransferFtConfigInterface = {
-    //   atomicalsInfo: {
-    //     confirmed: relatedConfirmed,
-    //     type: relatedType,
-    //     utxos: relatedUtxos,
-    //   },
-    //   selectedUtxos,
-    //   outputs: amountToSendNext,
-    // };
-    // const { txHex, unsendId } = await buildAndSignTx(
-    //   obj,
-    //   address,
-    //   xonlyPubHex,
-    //   20,
-    //   false
-    // );
-    // if (txHex) {
-    //   try {
-    //     const txId = await service.electrumApi.broadcast(txHex);
-    //     if (typeof txId !== "string") {
-    //       throw new Error("txId is not string");
-    //     }
-    //     if (txId !== unsendId) {
-    //       console.log("txId is not same");
-    //     }
-    //     console.log({ txId });
-    //   } catch (error) {
-    //     //
-    //   }
-    //   // signed success, continue sending
-    // } else {
-    //   console.log("dispatch signing error");
-    // }
+    const obj: TransferFtConfigInterface = {
+      atomicalsInfo: {
+        confirmed: item.confirmed,
+        type: item.type,
+        utxos: relatedAtomUtxos,
+      },
+      selectedUtxos,
+      outputs: amountToSend,
+    };
+    const { txHex, unsendId } = await buildAndSignTx(
+      obj,
+      address,
+      xonlyPubHex,
+      20,
+      false
+    );
+    if (txHex) {
+      try {
+        setSendLoading(true);
+        const txId = await service.electrumApi.broadcast(txHex);
+        if (typeof txId !== "string") {
+          throw new Error("txId is not string");
+        }
+        if (txId !== unsendId) {
+          console.log("txId is not same");
+        }
+        console.log({ txId });
+        setTxid(txId);
+      } catch (error) {
+        //
+      } finally {
+        setSendLoading(false);
+      }
+      setViewType("sended");
+      // signed success, continue sending
+    } else {
+      console.log("dispatch signing error");
+    }
   }
 
   async function buildAndSignTx(
@@ -201,8 +260,9 @@ const Transaction = () => {
         expectedFundinng = expectedSatoshisDeposit;
       }
     }
+    setFee(expectedFundinng);
     // add nonAtomUtxos least to expected deposit value
-
+    console.log("expectedFundinng", expectedFundinng);
     if (!preload) {
       let addedValue = 0;
       const addedInputs: UTXO[] = [];
@@ -262,6 +322,50 @@ const Transaction = () => {
     }
   }
 
+  if (viewType === "sended") {
+    return (
+      <>
+        <div
+          className="app-container"
+          style={{
+            minHeight: "calc(100vh - 90px)",
+          }}
+        >
+          <div className="app-body">
+            <div className="mt-20">
+              <div className="text-center py-10">
+                <h1 className="text-3xl font-bold">Transaction Submitted!</h1>
+              </div>
+            </div>
+            <div className="flex justify-between text-lg mt-8 mb-2">
+              <p>Amount</p>
+              <p className="text-strong-color text-right">
+                {selectedAmount} {item.ticker.toLocaleUpperCase()}
+              </p>
+            </div>
+            <div className="flex justify-between text-lg mt-8 mb-2">
+              <p>Address</p>
+              <p className="text-strong-color text-right">
+                {sendAddress.slice(0, 6)}...{sendAddress.slice(-4)}
+              </p>
+            </div>
+            <div className="flex items-center justify-between mt-2 mb-2">
+              Fee:
+              <p className="text-right">{fee} sats</p>
+            </div>
+            <div className="flex items-center justify-between mt-2 mb-2">
+              Txid:
+              <a className="text-right">
+                {txid.slice(0, 6)}...{txid.slice(-4)}
+              </a>
+            </div>
+          </div>
+          <div className="app-bottom"></div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div
@@ -271,25 +375,48 @@ const Transaction = () => {
         }}
       >
         <div className="app-header">
-          <div className="pt-4">
+          <div className="pt-4 flex items-center">
             <LeftOutline className="text-2xl" onClick={() => navigate(-1)} />
+            <h1 className="text-xl ml-4">
+              Transfer {item?.ticker.toLocaleUpperCase()}
+            </h1>
           </div>
           <div className="text-center">
-            <h1 className="pt-20 text-3xl font-bold">2000</h1>
-            <p>ATOM</p>
+            <p className="pt-14 ">Selected Amount</p>
+            <h1 className="text-3xl font-bold">
+              {selectedAmount} {item?.ticker.toLocaleUpperCase()}
+            </h1>
           </div>
         </div>
         <div className="app-body">
           <div className="mt-10">
             <p className="text-base">Address</p>
-            <input className="w-full h-9 border border-zinc-500 focus:border-black outline-none px-4" />
-            {/* <Form>
-              <Form.Item>
-                <Input />
-              </Form.Item>
-            </Form> */}
-            <h2 className="text-base mt-3 mb-3">Select token</h2>
-            <p>Note: #207, #5439 will be merged into ATOM.</p>
+            <input
+              className="w-full h-9 border border-zinc-500 focus:border-black outline-none px-4"
+              onChange={(e) => {
+                setSendAddress(e.target.value);
+                validateAddress(e.target.value);
+              }}
+            />
+            {sendAddressError && (
+              <p className="text-red-500">{sendAddressError}</p>
+            )}
+            <div className="flex items-center justify-between mt-2 mb-2">
+              BTC Balance:
+              <p className="text-right">{fundingBalance} sats</p>
+            </div>
+            <div className="flex items-center justify-between mt-2 mb-2">
+              Fee:
+              <p className="text-right">{fee} sats</p>
+            </div>
+            <div className="flex items-center justify-between mt-2 mb-2">
+              Merge Value:
+              <Switch
+                checked={isMerge}
+                onChange={(checked) => setIsMerge(checked)}
+              />
+            </div>
+            <h2 className="text-base mt-3 mb-1">Select token</h2>
             {/* <Checkbox.Group
               value={checkeds}
               onChange={(v) => {
@@ -312,7 +439,7 @@ const Transaction = () => {
             >
               <Selector
                 ellipsis
-                options={atomUtxos.map((o) => ({
+                options={relatedAtomUtxos.map((o) => ({
                   label: o.value.toString(),
                   value: o.txid,
                 }))}
@@ -327,8 +454,13 @@ const Transaction = () => {
         </div>
         <div className="app-bottom">
           <button
-            className="w-full bg-primary text-white py-2 px-4 text-center rounded-full"
+            className={`w-full ${
+              !selectedAmount || (sendAddress && !sendAddressError)
+                ? "bg-gray-400"
+                : "bg-primary"
+            } text-white py-2 px-4 text-center rounded-full`}
             onClick={() => setVisible(true)}
+            disabled={!selectedAmount || (sendAddress && !sendAddressError)}
           >
             Send
           </button>
@@ -346,26 +478,29 @@ const Transaction = () => {
           </h1>
           <div className="bg-body-bg rounded-md p-2 break-all">
             From
-            <p>
-              bc1pabcd8vvj2s95pdzeax4x9tkuawr5um49n9er6gd2wf6wthwrh6yshm1234
-            </p>
+            <p>{address}</p>
           </div>
           <div className="flex justify-center py-1">
             <img src={ICON_ARROW} className="w-8 h-8" alt="" />
           </div>
           <div className="bg-body-bg rounded-md p-2 break-all">
             To
-            <p>
-              bc1pabcd8vvj2s95pdzeax4x9tkuawr5um49n9er6gd2wf6wthwrh6yshm1234
-            </p>
+            <p>{sendAddress}</p>
           </div>
           <div className="flex justify-between text-lg mt-8 mb-2">
             <p>Amount</p>
-            <p className="text-strong-color text-right">2000 ATOM</p>
+            <p className="text-strong-color text-right">
+              {selectedAmount} {item.ticker.toLocaleUpperCase()}
+            </p>
           </div>
-          <p className="text-strong-color">
-            Note: #207, #5439 will be merged into 2,000 ATOM.
-          </p>
+          <div className="flex items-center justify-between mt-2 mb-2">
+            Fee:
+            <p className="text-right">{fee} sats</p>
+          </div>
+          <div className="flex items-center justify-between mt-2 mb-2">
+            Merge Value:
+            <p className="text-right">{isMerge.toString()}</p>
+          </div>
           <button
             className="w-full mt-20  bg-primary text-white py-2 px-4 text-center rounded-full"
             onClick={handleSubmit}

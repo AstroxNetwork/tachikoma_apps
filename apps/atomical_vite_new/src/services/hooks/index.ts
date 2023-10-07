@@ -94,28 +94,27 @@ export function useAddress() {
   >(undefined);
   useEffect(() => {
     (async () => {
-      // const accs = await provider.requestAccounts();
-      // const p2trPub = await provider.getPublicKey(accs[0]);
-      // setOriginAddress(accs[0]);
-      // const xpub = (toXOnly(Buffer.from(p2trPub, "hex")) as Buffer).toString(
-      //   "hex"
-      // );
-      // setXonlyPubHex(xpub);
-      // // setXonlyPubHex('133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b');
-      // const p2trAddress = fromPubToP2tr(p2trPub);
-      // // const p2trAddress = 'bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'; //fromPubToP2tr(p2trPub);
-      // setAddress(p2trAddress);
-      // if ((await provider.getAddressType(accs[0])) === "p2pkh") {
-      //   setIsAllowedAddressType(true);
-      // } else {
-      //   setIsAllowedAddressType(false);
-      // }
-
-      setXonlyPubHex(
-        "133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b"
+      const accs = await provider.requestAccounts();
+      const p2trPub = await provider.getPublicKey(accs[0]);
+      setOriginAddress(accs[0]);
+      const xpub = (toXOnly(Buffer.from(p2trPub, "hex")) as Buffer).toString(
+        "hex"
       );
-      const p2trAddress =
-        "bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv"; //fromPubToP2tr(p2trPub);
+      setXonlyPubHex(xpub);
+      // setXonlyPubHex('133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b');
+      const p2trAddress = fromPubToP2tr(p2trPub);
+      // const p2trAddress = 'bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'; //fromPubToP2tr(p2trPub);
+      setAddress(p2trAddress);
+      if ((await provider.getAddressType(accs[0])) === "p2pkh") {
+        setIsAllowedAddressType(true);
+      } else {
+        setIsAllowedAddressType(false);
+      }
+      // setXonlyPubHex(
+      //   "133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b"
+      // );
+      // const p2trAddress =
+      //   "bc1pgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv"; //fromPubToP2tr(p2trPub);
       setAddress(p2trAddress);
       setIsAllowedAddressType(true);
     })();

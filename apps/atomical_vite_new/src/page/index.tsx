@@ -1,10 +1,9 @@
-import { Collapse, Modal, Toast } from "@/components";
+import { List, Modal, Toast } from "@/components";
 import { useNavigate } from "react-router-dom";
 import { EditSOutline } from "antd-mobile-icons";
 import { useAddress, useAtomicalWalletInfo } from "@/services/hooks";
-import Selector from "@/components/components/selector";
 import QrCode from "qrcode.react";
-import { useMemo } from "react";
+import { IAtomicalBalanceItem } from "@/interfaces/api";
 
 const IndexPage = () => {
   const navigate = useNavigate();
@@ -22,7 +21,6 @@ const IndexPage = () => {
     allUtxos,
   } = useAtomicalWalletInfo(address);
 
-  const size = useMemo(() => atomUtxos.length, [atomUtxos]);
   const modal = () => {
     Modal.show({
       closeOnMaskClick: true,
@@ -45,23 +43,70 @@ const IndexPage = () => {
     });
   };
 
+  const sendModal = () => {
+    const alert = Modal.show({
+      closeOnMaskClick: true,
+      title: <span className="text-strong-color">Send Token</span>,
+      content: (
+        <>
+          <List>
+            {balanceMap &&
+              Object.keys(balanceMap ?? [])
+                .map((k) => balanceMap[k])
+                .filter((v: IAtomicalBalanceItem) => {
+                  return v.type === "FT";
+                })
+                .map((o: IAtomicalBalanceItem) => (
+                  <List.Item
+                    key={o.atomical_id}
+                    onClick={(e) => {
+                      alert.close();
+                      e.stopPropagation();
+                      navigate(`/transation?atomical_id=${o.atomical_id}`);
+                    }}
+                    title={
+                      <div className="flex justify-between">
+                        <span className="text-strong-color">{`${o.ticker.toLocaleUpperCase()}(${
+                          atomUtxos?.filter(
+                            (utxo) => utxo.atomicals[0] === o.atomical_id
+                          ).length
+                        })`}</span>
+                        <span className="text-strong-color">{o.confirmed}</span>
+                      </div>
+                    }
+                    arrow={<div className="h-5"></div>}
+                  ></List.Item>
+                ))}
+          </List>
+        </>
+      ),
+    });
+  };
+
   console.log("balance", balance);
   console.log("atomUtxos", atomUtxos);
   console.log("fundingBalance", fundingBalance);
   console.log("nonAtomUtxos", nonAtomUtxos);
   console.log("balanceMap", balanceMap);
   console.log("allUtxos", allUtxos);
-
   return (
     <div className="app-container">
       <div className="app-header">
         <div className="bg-card-bg w-full p-4 rounded-md mt-4">
           <div className="flex items-center text-base">
-            bc1pabcd…1234
+            {address?.slice(0, 6)}...{address?.slice(-4)}
             <EditSOutline />
           </div>
-          <div className="text-center py-5">
-            <h1 className="text-3xl font-bold">2000 BTC</h1>
+          <div className="text-center py-10">
+            <h1 className="text-3xl font-bold">
+              {balanceMap && fundingBalance
+                ? Object.keys(balanceMap)
+                    .map((key) => balanceMap[key])
+                    .map((o) => o.confirmed)
+                    .reduce((pre, cur) => pre + cur, fundingBalance)
+                : "--"}{" "}
+              sats
+            </h1>
           </div>
           <div className="flex justify-between px-5">
             <button
@@ -72,7 +117,7 @@ const IndexPage = () => {
             </button>
             <button
               className="w-5/12 bg-primary text-white py-2 px-4 text-center rounded-full"
-              onClick={() => navigate("/transation")}
+              onClick={sendModal}
             >
               Send
             </button>
@@ -82,43 +127,49 @@ const IndexPage = () => {
       <div className="app-body">
         <>
           <h1 className="text-base mt-5 mb-2">Tokens</h1>
-          <Collapse accordion>
-            <Collapse.Panel
+          <List>
+            <List.Item
               key="1"
               title={
-                <div className="flex justify-between">
+                <div className="flex justify-between text-strong-color">
                   BTC
-                  <p>{fundingBalance}</p>
+                  <p className="text-strong-color">{fundingBalance} sats</p>
                 </div>
               }
-              arrow={<div className="h-5 w-5"></div>}
-              disabled
-            ></Collapse.Panel>
-            <Collapse.Panel
-              key="2"
-              title={
-                <div className="flex justify-between">
-                  <span>{`ATOM(${size})`}</span>
-                  <span>{balance}</span>
-                </div>
-              }
-              arrow={<div className="h-5 w-5"></div>}
-              disabled
-            >
-              {/* <div className="h-96"></div> */}
-              <div>
-                <Selector
-                  ellipsis={true}
-                  options={atomUtxos.map((o) => ({
-                    label: o.value.toString(),
-                    value: o.txid,
-                  }))}
-                  className="bg-body-bg"
-                  disabled
-                />
-              </div>
-            </Collapse.Panel>
-          </Collapse>
+              arrow={<div className="h-5"></div>}
+            ></List.Item>
+            {balanceMap &&
+              Object.keys(balanceMap ?? [])
+                .map((k) => balanceMap[k])
+                .filter((v: IAtomicalBalanceItem) => {
+                  return v.type === "FT";
+                })
+                .map((o: IAtomicalBalanceItem) => {
+                  console.log("o", o);
+                  return (
+                    <List.Item
+                      key={o.atomical_id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/transation?atomical_id=${o.atomical_id}`);
+                      }}
+                      title={
+                        <div className="flex justify-between">
+                          <span className="text-strong-color">{`${o.ticker.toLocaleUpperCase()}(${
+                            atomUtxos?.filter(
+                              (utxo) => utxo.atomicals[0] === o.atomical_id
+                            ).length
+                          })`}</span>
+                          <span className="text-strong-color">
+                            {o.confirmed} sats
+                          </span>
+                        </div>
+                      }
+                      arrow={<div className="h-5"></div>}
+                    ></List.Item>
+                  );
+                })}
+          </List>
           <div className="h-10"></div>
         </>
       </div>
