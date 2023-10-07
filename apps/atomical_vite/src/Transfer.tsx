@@ -91,7 +91,8 @@ export const Transfer = ({
     return relatedUtxos
       .sort((a, b) => a.height - b.height)
       .map((utxo, index) => {
-        const selected = selectedTxIDs.findIndex(id => id === utxo.txid) > -1;
+        const localId = `${utxo.txid}i${utxo.index}`;
+        const selected = selectedTxIDs.findIndex(id => id === localId) > -1;
         return (
           <li
             key={index}
@@ -105,13 +106,13 @@ export const Transfer = ({
               margin: 0,
             }}
             onClick={async () => {
-              let sel = !selected ? [...selectedTxIDs, utxo.txid] : selectedTxIDs.filter(id => id !== utxo.txid);
+              let sel = !selected ? [...selectedTxIDs, localId] : selectedTxIDs.filter(id => id !== localId);
               setSelectedTxIDs(sel);
               await handleSelectedAmount(sel);
             }}
           >
             <span>{selected ? `✅` : `🔳`}</span>
-            <div style={{ marginLeft: 16, width: 160 }}>{handleAddress(utxo.txid, 4)}</div>
+            <div style={{ marginLeft: 16, width: 160 }}>{handleAddress(utxo.txid, 4) + 'i' + `${utxo.index}`}</div>
             <div style={{ marginLeft: 16 }}>{utxo.value}</div>
             <div style={{ marginLeft: 16 }}>{utxo.height}</div>
           </li>
@@ -141,7 +142,7 @@ export const Transfer = ({
     let selectedUtxos: ISelectedUtxo[] = [];
     let _amountsToSend: AmountToSend[] = [];
     for (let i = 0; i < ids.length; i += 1) {
-      const selcted = ids[i];
+      const selcted = ids[i].split('i')[0];
       let found = relatedUtxos.find(item => item.txid === selcted);
       if (found) {
         selectedValue += found.value;
