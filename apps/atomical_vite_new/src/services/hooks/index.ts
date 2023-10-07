@@ -8,8 +8,8 @@ import { fromPubToP2tr, toXOnly } from "@/clients/utils";
 import { MempoolUtxo, mempoolService } from "@/clients/mempool";
 const provider = new AstroXWizzInhouseProvider();
 
-const ELECTRUMX_WSS = "ws://18.139.208.6:50001";
-const api = ElectrumApi.createClient(ELECTRUMX_WSS);
+const ELECTRUMX_HTTP_PROXY = "https://ep.atomicals.xyz/proxy";
+const api = ElectrumApi.createClient(ELECTRUMX_HTTP_PROXY);
 const atomicalService = new AtomicalService(api);
 
 interface UseAtomicalService {
@@ -154,6 +154,8 @@ export function useAddress() {
   const [originAddress, setOriginAddress] = useState<string | undefined>(
     undefined
   );
+  const [addressType, setAddressType] = useState<string | undefined>("p2wpkh"); // ['p2pkh', 'p2tr', 'p2wpkh']
+  const [accs, setAccs] = useState<string[]>([]);
   const [xonlyPubHex, setXonlyPubHex] = useState<string | undefined>(undefined);
   const [isAllowedAddressType, setIsAllowedAddressType] = useState<
     boolean | undefined
@@ -162,8 +164,11 @@ export function useAddress() {
     (async () => {
       try {
         const accs = await provider.requestAccounts();
+        setAccs(accs);
         const p2trPub = await provider.getPublicKey(accs[0]);
         setOriginAddress(accs[0]);
+        const currentAddressType = await provider.getAddressType(accs[0]);
+        setAddressType(currentAddressType);
         const xpub = (toXOnly(Buffer.from(p2trPub, "hex")) as Buffer).toString(
           "hex"
         );
@@ -191,6 +196,8 @@ export function useAddress() {
     })();
   }, []);
   return {
+    accounts: accs,
+    addressType,
     address,
     xonlyPubHex,
     originAddress,
