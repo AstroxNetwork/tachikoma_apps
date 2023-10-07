@@ -1,15 +1,25 @@
 import { ElectrumApi } from "@/clients/eletrum";
 import { AtomicalService } from "../atomical";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useContext,
+  createContext,
+  FunctionComponent,
+  ReactNode,
+} from "react";
 import { IAtomicalBalances, ISelectedUtxo } from "@/interfaces/api";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
 import { fromPubToP2tr, toXOnly } from "@/clients/utils";
 import { MempoolUtxo, mempoolService } from "@/clients/mempool";
+
 const provider = new AstroXWizzInhouseProvider();
 
-const ELECTRUMX_WSS = "ws://18.139.208.6:50001";
-const api = ElectrumApi.createClient(ELECTRUMX_WSS);
+const ELECTRUMX_HTTP_PROXY = "https://ep.atomicals.xyz/proxy";
+const api = ElectrumApi.createClient(ELECTRUMX_HTTP_PROXY);
+//@ts-ignore
 const atomicalService = new AtomicalService(api);
 
 interface UseAtomicalService {
