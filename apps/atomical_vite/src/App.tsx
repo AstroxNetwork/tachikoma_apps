@@ -13,6 +13,7 @@ import { Transfer } from './Transfer';
 import { Overlay, Popup } from 'react-vant';
 import { UTXO } from './interfaces/utxo';
 import { MempoolUtxo, mempoolService } from './clients/mempool';
+import { ElectrumProxyProvider } from './clients/proxyProvider';
 
 const provider = new AstroXWizzInhouseProvider();
 
@@ -21,6 +22,7 @@ export function handleAddress(address: string, padding: number = 6): string {
 }
 
 const ELECTRUMX_WSS = 'wss://electrumx.atomicals.xyz:50012';
+const ELECTRUMX_HTTP_PROXY = 'https://ep.atomicals.xyz/proxy';
 function App() {
   const [originAddress, setOriginAddress] = useState<string | undefined>(undefined); // 'bc1qpgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'
   const [address, setAddress] = useState<string | undefined>(undefined);
@@ -46,7 +48,7 @@ function App() {
 
   const init = () => {
     try {
-      const api = ElectrumApi.createClient(ELECTRUMX_WSS);
+      const api = ElectrumApi.createClient(ELECTRUMX_HTTP_PROXY);
       const service = new AtomicalService(api);
       setService(service);
     } catch (error) {
@@ -57,6 +59,7 @@ function App() {
 
   const getWalletInfo = async () => {
     // const addr = await getAddress();
+
     if (address) {
       try {
         showToast({ content: 'Connecting Service', type: 'loading' });
@@ -78,6 +81,7 @@ function App() {
 
         const _allUtxos = await service.electrumApi.getUnspentAddress(address);
         const mempoolUtxos: MempoolUtxo[] = await mempoolService.getUtxo(address);
+
         const confirmedUtxos: UTXO[] = [];
         for (let i = 0; i < _allUtxos.utxos.length; i++) {
           const found = mempoolUtxos.findIndex(item => item.txid === _allUtxos.utxos[i].txid && item.status.confirmed === true);
@@ -87,6 +91,14 @@ function App() {
         }
         const ordUtxosResoponse = await provider.getInscriptions(address);
         const { list: ordList, total } = ordUtxosResoponse;
+
+        let mempoolBalance = 0;
+        for (let i = 0; i < mempoolUtxos.length; i += 1) {
+          if (mempoolUtxos[i].status.confirmed === true) {
+            mempoolBalance += mempoolUtxos[i].value;
+          }
+        }
+        console.log({ mempoolBalance });
 
         if (atomicals_utxos.length > 0) {
           setAtomUtxos(atomicals_utxos);
@@ -123,9 +135,11 @@ function App() {
             }
           }
         }
+
         setNonAtomUtxos(nonAtomUtxos.sort((a, b) => b.value - a.value));
         setFundingBalance(nonAtomUtxosValue);
       } catch (error) {
+        console.log({ error });
         throw error;
       }
     }
@@ -145,6 +159,10 @@ function App() {
           break;
         }
       }
+    } else {
+      setTimeout(() => {
+        handleUtxos(expect_id);
+      }, 2000);
     }
     return utxos;
   };

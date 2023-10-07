@@ -9,26 +9,11 @@ export class AtomicalService {
     await this.electrumApi.resetConnection();
   }
 
-  async open() {
-    try {
-      return await this.electrumApi.open();
-    } catch (error) {
-      throw 'socket open error';
-    }
-  }
-  async close() {
-    try {
-      return await this.electrumApi.close();
-    } catch (error) {
-      throw 'socket close error';
-    }
-  }
-
   async walletInfo(address: string, verbose: boolean): Promise<any> {
     try {
-      await this.open();
       const { scripthash } = detectAddressTypeToScripthash(address);
       let res = await this.electrumApi.atomicalsByScripthash(scripthash, true);
+      console.log({ res });
       let history = undefined;
       if (verbose) {
         history = await this.electrumApi.history(scripthash);
@@ -88,6 +73,7 @@ export class AtomicalService {
         },
       };
     } catch (error) {
+      console.log({ error });
       // if ((error.message as string).toLowerCase().includes('socket')) {
       //   throw 'Network Connection Error';
       // } else {

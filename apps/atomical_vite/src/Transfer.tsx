@@ -11,6 +11,7 @@ import { Buffer } from 'buffer';
 import { UTXO } from './interfaces/utxo';
 import { AstroXWizzInhouseProvider } from 'webf_wizz_inhouse';
 import { showToast } from '@uni/toast';
+import { MempoolService } from './clients/mempool';
 
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
@@ -140,7 +141,7 @@ export const Transfer = ({
     let _amountsToSend: AmountToSend[] = [];
     for (let i = 0; i < ids.length; i += 1) {
       const selcted = ids[i];
-      const found = relatedUtxos.find(item => item.txid === selcted);
+      let found = relatedUtxos.find(item => item.txid === selcted);
       if (found) {
         selectedValue += found.value;
         selectedUtxos.push(found);
@@ -203,6 +204,7 @@ export const Transfer = ({
   }
 
   async function handleSubmit() {
+    console.log('handleSubmit');
     const obj: TransferFtConfigInterface = {
       atomicalsInfo: {
         confirmed: relatedConfirmed,
@@ -214,6 +216,7 @@ export const Transfer = ({
     };
     let txHex: any;
     try {
+      console.log('before buildAndSignTx');
       txHex = await buildAndSignTx(obj, primaryAddress, xonlyPubHex, 20, false);
     } catch (error) {
       txHex = undefined;
@@ -221,7 +224,7 @@ export const Transfer = ({
     if (txHex) {
       setTxStatus(TransferStatus.Sending);
       try {
-        const txId = await service.electrumApi.broadcast(txHex);
+        const txId = await new MempoolService().broadCast(txHex);
         if (typeof txId !== 'string') {
           throw new Error('txId is not string');
         }
@@ -251,6 +254,7 @@ export const Transfer = ({
     preload: boolean,
   ): Promise<string | undefined> {
     if (transferOptions.atomicalsInfo.type !== 'FT') {
+      console.log('transferOptions.atomicalsInfo.type !== FT');
       throw 'Atomical is not an FT. It is expected to be an FT type';
     }
     const psbt = new bitcoin.Psbt({ network: bitcoin.networks.bitcoin });
@@ -258,6 +262,7 @@ export const Transfer = ({
     let tokenBalanceOut = 0;
     let tokenInputsLength = 0;
     let tokenOutputsLength = 0;
+    console.log('intialize psbt');
     for (const utxo of transferOptions.selectedUtxos) {
       // Add the atomical input, the value from the input counts towards the total satoshi amount required
       if (!preload) {
@@ -273,17 +278,20 @@ export const Transfer = ({
       tokenBalanceIn += utxo.value;
       tokenInputsLength++;
     }
+    console.log('const utxo of transferOptions.selectedUtxos');
 
     for (const output of transferOptions.outputs) {
+      console.log(output);
       if (!preload) {
         psbt.addOutput({
           value: output.value,
-          address: output.address,
+          address: output.address ?? sendAddress,
         });
       }
       tokenBalanceOut += output.value;
       tokenOutputsLength++;
     }
+    console.log('const output of transferOptions.outputs');
     console.log({ tokenBalanceIn });
     console.log({ tokenBalanceOut });
     // TODO DETECT THAT THERE NEEDS TO BE CHANGE ADDED AND THEN
@@ -308,7 +316,6 @@ export const Transfer = ({
 
     if (!preload) {
       let addedValue = 0;
-      let addedInputs: UTXO[] = [];
 
       for (let i = 0; i <= nonAtomUtxos.length; i += 1) {
         const utxo = nonAtomUtxos[i];
@@ -317,7 +324,6 @@ export const Transfer = ({
           break;
         } else {
           addedValue += utxo.value;
-          addedInputs.push(utxo);
           const { output } = detectAddressTypeToScripthash(address);
           psbt.addInput({
             hash: utxo.txid,
@@ -328,7 +334,6 @@ export const Transfer = ({
         }
       }
       console.log(addedValue);
-      console.log(addedInputs);
 
       if (addedValue - expectedSatoshisDeposit >= 546) {
         psbt.addOutput({
@@ -391,7 +396,7 @@ export const Transfer = ({
             color: '#ddd',
           }}
           onTouchEnd={async () => {
-            console.log('submit');
+            console.log('back');
             setToConfirm(false);
           }}
         >
