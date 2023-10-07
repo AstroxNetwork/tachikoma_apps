@@ -27,7 +27,7 @@ const IndexPage = () => {
   useEffect(() => {
     (async () => {
       // const addressType = "p2wpkh";
-      if (addressType !== "p2pkh") {
+      if (addressType && addressType !== "p2pkh") {
         setVisible(true);
       }
     })();
