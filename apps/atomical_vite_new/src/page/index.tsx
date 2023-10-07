@@ -1,10 +1,15 @@
 import { List, Modal, Toast } from "@/components";
 import { useNavigate } from "react-router-dom";
 import { EditSOutline } from "antd-mobile-icons";
-import { useAddress, useAtomicalWalletInfo } from "@/services/hooks";
+import {
+  useAddress,
+  useAtomicalService,
+  useAtomicalWalletInfo,
+} from "@/services/hooks";
 import QrCode from "qrcode.react";
 import { IAtomicalBalanceItem } from "@/interfaces/api";
 import { ICON_COPY } from "@/utils/resource";
+import { useEffect } from "react";
 
 const IndexPage = () => {
   const navigate = useNavigate();
@@ -13,6 +18,7 @@ const IndexPage = () => {
     // isAllowedAddressType,
     // xonlyPubHex,
   } = useAddress();
+  const { isTimeout } = useAtomicalService();
   const {
     balance,
     atomUtxos,
@@ -21,6 +27,12 @@ const IndexPage = () => {
     balanceMap,
     allUtxos,
   } = useAtomicalWalletInfo(address);
+
+  useEffect(() => {
+    if (isTimeout) {
+      Toast.show("Connection timeout.");
+    }
+  }, [isTimeout]);
 
   const modal = () => {
     Modal.show({

@@ -13,7 +13,7 @@ import * as bitcoin from "bitcoinjs-lib";
 import ecc from "@bitcoinerlab/secp256k1";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
-import { ICON_ARROW } from "@/utils/resource";
+import { ICON_ARROW, ICON_BACK } from "@/utils/resource";
 import { Switch } from "antd-mobile";
 const provider = new AstroXWizzInhouseProvider();
 bitcoin.initEccLib(ecc);
@@ -75,7 +75,7 @@ const Transaction = () => {
     balanceMap,
     // allUtxos,
   } = useAtomicalWalletInfo(address);
-  const service = useAtomicalService();
+  const { service } = useAtomicalService();
   const [sendAddressError, setSendAddressError] = useState<string | undefined>(
     undefined
   );
@@ -376,7 +376,11 @@ const Transaction = () => {
       >
         <div className="app-header">
           <div className="pt-4 flex items-center">
-            <img className="text-2xl w-5" onClick={() => navigate(-1)} />
+            <img
+              className="text-2xl w-5"
+              src={ICON_BACK}
+              onClick={() => navigate(-1)}
+            />
             <h1 className="text-xl ml-4">
               Transfer {item?.ticker.toLocaleUpperCase()}
             </h1>
@@ -391,13 +395,15 @@ const Transaction = () => {
         <div className="app-body">
           <div className="mt-10">
             <p className="text-base">Address</p>
-            <input
-              className="w-full h-9 border border-zinc-500 focus:border-black outline-none px-4"
-              onChange={(e) => {
-                setSendAddress(e.target.value);
-                validateAddress(e.target.value);
-              }}
-            />
+            <div className="w-full h-9 border bg-body-bg border-zinc-500 outline-none px-4">
+              <input
+                className="w-full h-full bg-body-bg outline-none"
+                onChange={(e) => {
+                  setSendAddress(e.target.value);
+                  validateAddress(e.target.value);
+                }}
+              />
+            </div>
             {sendAddressError && (
               <p className="text-red-500">{sendAddressError}</p>
             )}
@@ -490,7 +496,7 @@ const Transaction = () => {
           <div className="flex justify-between text-lg mt-8 mb-2">
             <p>Amount</p>
             <p className="text-strong-color text-right">
-              {selectedAmount} {item.ticker.toLocaleUpperCase()}
+              {selectedAmount} {item?.ticker?.toLocaleUpperCase()}
             </p>
           </div>
           <div className="flex items-center justify-between mt-2 mb-2">
