@@ -7,7 +7,6 @@ import {
   useAtomicalService,
   useAtomicalWalletInfo,
 } from "@/services/hooks";
-import { LeftOutline } from "antd-mobile-icons";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as bitcoin from "bitcoinjs-lib";
@@ -148,6 +147,7 @@ const Transaction = () => {
       selectedUtxos,
       outputs: amountToSend,
     };
+    if (sendLoading) return;
     const { txHex, unsendId } = await buildAndSignTx(
       obj,
       address,
@@ -502,10 +502,12 @@ const Transaction = () => {
             <p className="text-right">{isMerge.toString()}</p>
           </div>
           <button
-            className="w-full mt-20  bg-primary text-white py-2 px-4 text-center rounded-full"
+            className={`w-full mt-20  ${
+              sendLoading ? "bg-gray-500 text-black" : "bg-primary"
+            } text-white py-2 px-4 text-center rounded-full`}
             onClick={handleSubmit}
           >
-            Confirm to send
+            {sendLoading ? "Sending" : "Confirm to send"}
           </button>
         </div>
       </Mask>
