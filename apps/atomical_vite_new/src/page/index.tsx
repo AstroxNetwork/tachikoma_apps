@@ -1,10 +1,10 @@
-import { List, Mask, Modal, Toast } from '@/components';
-import { useNavigate } from 'react-router-dom';
-import { useAddress, useAtomicalWalletInfo } from '@/services/hooks';
-import QrCode from 'qrcode.react';
-import { IAtomicalBalanceItem } from '@/interfaces/api';
-import { ICON_COPY } from '@/utils/resource';
-import { useEffect, useState } from 'react';
+import { List, Mask, Modal, Toast } from "@/components";
+import { useNavigate } from "react-router-dom";
+import { useAddress, useAtomicalWalletInfo } from "@/services/hooks";
+import QrCode from "qrcode.react";
+import { IAtomicalBalanceItem } from "@/interfaces/api";
+import { ICON_COPY } from "@/utils/resource";
+import { useEffect, useState } from "react";
 
 const IndexPage = () => {
   const navigate = useNavigate();
@@ -15,7 +15,14 @@ const IndexPage = () => {
     // xonlyPubHex,
   } = useAddress();
   // const { isTimeout } = useAtomicalService();
-  const { balance, atomUtxos, fundingBalance, nonAtomUtxos, balanceMap, allUtxos } = useAtomicalWalletInfo(address);
+  const {
+    balance,
+    atomUtxos,
+    fundingBalance,
+    nonAtomUtxos,
+    balanceMap,
+    allUtxos,
+  } = useAtomicalWalletInfo(address);
 
   // useEffect(() => {
   //   if (isTimeout) {
@@ -35,7 +42,7 @@ const IndexPage = () => {
             className="w-24 mt-4 bg-primary text-white py-2 px-4 text-center rounded-full"
             onClick={() => {
               navigator.clipboard.writeText(address);
-              Toast.show('Copied!');
+              Toast.show("Copied!");
             }}
           >
             Copy
@@ -54,14 +61,14 @@ const IndexPage = () => {
           <List>
             {balanceMap &&
               Object.keys(balanceMap ?? [])
-                .map(k => balanceMap[k])
+                .map((k) => balanceMap[k])
                 .filter((v: IAtomicalBalanceItem) => {
-                  return v.type === 'FT';
+                  return v.type === "FT";
                 })
                 .map((o: IAtomicalBalanceItem) => (
                   <List.Item
                     key={o.atomical_id}
-                    onClick={e => {
+                    onClick={(e) => {
                       alert.close();
                       e.stopPropagation();
                       navigate(`/transation?atomical_id=${o.atomical_id}`);
@@ -69,7 +76,9 @@ const IndexPage = () => {
                     title={
                       <div className="flex justify-between">
                         <span className="text-strong-color">{`${o.ticker.toLocaleUpperCase()}(${
-                          atomUtxos?.filter(utxo => utxo.atomicals[0] === o.atomical_id).length
+                          atomUtxos?.filter(
+                            (utxo) => utxo.atomicals[0] === o.atomical_id
+                          ).length
                         })`}</span>
                         <span className="text-strong-color">{o.confirmed}</span>
                       </div>
@@ -83,12 +92,12 @@ const IndexPage = () => {
     });
   };
 
-  console.log('balance', balance);
-  console.log('atomUtxos', atomUtxos);
-  console.log('fundingBalance', fundingBalance);
-  console.log('nonAtomUtxos', nonAtomUtxos);
-  console.log('balanceMap', balanceMap);
-  console.log('allUtxos', allUtxos);
+  console.log("balance", balance);
+  console.log("atomUtxos", atomUtxos);
+  console.log("fundingBalance", fundingBalance);
+  console.log("nonAtomUtxos", nonAtomUtxos);
+  console.log("balanceMap", balanceMap);
+  console.log("allUtxos", allUtxos);
   return (
     <div className="app-container">
       <div className="app-header">
@@ -101,7 +110,7 @@ const IndexPage = () => {
               alt=""
               onClick={() => {
                 navigator.clipboard.writeText(address);
-                Toast.show('Copied!');
+                Toast.show("Copied!");
               }}
             />
           </div>
@@ -109,18 +118,24 @@ const IndexPage = () => {
             <h1 className="text-3xl font-bold">
               {balanceMap && fundingBalance
                 ? Object.keys(balanceMap)
-                    .map(key => balanceMap[key])
-                    .map(o => o.confirmed)
+                    .map((key) => balanceMap[key])
+                    .map((o) => o.confirmed)
                     .reduce((pre, cur) => pre + cur, fundingBalance)
-                : '--'}{' '}
+                : "--"}{" "}
               sats
             </h1>
           </div>
           <div className="flex justify-between px-5">
-            <button className="w-5/12 bg-primary text-white py-2 px-4 text-center rounded-full" onClick={modal}>
+            <button
+              className="w-5/12 bg-primary text-white py-2 px-4 text-center rounded-full"
+              onClick={modal}
+            >
               Receive
             </button>
-            <button className="w-5/12 bg-primary text-white py-2 px-4 text-center rounded-full" onClick={sendModal}>
+            <button
+              className="w-5/12 bg-primary text-white py-2 px-4 text-center rounded-full"
+              onClick={sendModal}
+            >
               Send
             </button>
           </div>
@@ -141,25 +156,29 @@ const IndexPage = () => {
               ></List.Item>
               {balanceMap &&
                 Object.keys(balanceMap ?? [])
-                  .map(k => balanceMap[k])
+                  .map((k) => balanceMap[k])
                   .filter((v: IAtomicalBalanceItem) => {
-                    return v.type === 'FT';
+                    return v.type === "FT";
                   })
                   .map((o: IAtomicalBalanceItem) => {
-                    console.log('o', o);
+                    console.log("o", o);
                     return (
                       <List.Item
                         key={o.atomical_id}
-                        onClick={e => {
+                        onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/transation?atomical_id=${o.atomical_id}`);
                         }}
                         title={
                           <div className="flex justify-between">
                             <span className="text-strong-color">{`${o.ticker.toLocaleUpperCase()}(${
-                              atomUtxos?.filter(utxo => utxo.atomicals[0] === o.atomical_id).length
+                              atomUtxos?.filter(
+                                (utxo) => utxo.atomicals[0] === o.atomical_id
+                              ).length
                             })`}</span>
-                            <span className="text-strong-color">{o.confirmed} sats</span>
+                            <span className="text-strong-color">
+                              {o.confirmed} sats
+                            </span>
                           </div>
                         }
                         arrow={<div className="h-5"></div>}
@@ -187,25 +206,29 @@ const IndexPage = () => {
             ></List.Item>
             {balanceMap &&
               Object.keys(balanceMap ?? [])
-                .map(k => balanceMap[k])
+                .map((k) => balanceMap[k])
                 .filter((v: IAtomicalBalanceItem) => {
-                  return v.type === 'FT';
+                  return v.type === "FT";
                 })
                 .map((o: IAtomicalBalanceItem) => {
-                  console.log('o', o);
+                  console.log("o", o);
                   return (
                     <List.Item
                       key={o.atomical_id}
-                      onClick={e => {
+                      onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/transation?atomical_id=${o.atomical_id}`);
                       }}
                       title={
                         <div className="flex justify-between">
                           <span className="text-strong-color">{`${o.ticker.toLocaleUpperCase()}(${
-                            atomUtxos?.filter(utxo => utxo.atomicals[0] === o.atomical_id).length
+                            atomUtxos?.filter(
+                              (utxo) => utxo.atomicals[0] === o.atomical_id
+                            ).length
                           })`}</span>
-                          <span className="text-strong-color">{o.confirmed} sats</span>
+                          <span className="text-strong-color">
+                            {o.confirmed} sats
+                          </span>
                         </div>
                       }
                       arrow={<div className="h-5"></div>}

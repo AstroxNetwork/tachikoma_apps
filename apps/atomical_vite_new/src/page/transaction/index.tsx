@@ -3,7 +3,7 @@ import { Mask } from "@/components";
 import Selector from "@/components/components/selector";
 import { AmountToSend, IAtomicalsInfo, ISelectedUtxo } from "@/interfaces/api";
 import {
-  useAddress,
+  useWizzProvider,
   useAtomicalService,
   useAtomicalWalletInfo,
 } from "@/services/hooks";
@@ -14,7 +14,7 @@ import ecc from "@bitcoinerlab/secp256k1";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
 import { ICON_ARROW, ICON_BACK } from "@/utils/resource";
-import { Switch } from "antd-mobile";
+import { Switch, DotLoading } from "antd-mobile";
 const provider = new AstroXWizzInhouseProvider();
 bitcoin.initEccLib(ecc);
 
@@ -49,8 +49,10 @@ export interface TransferFtConfigInterface {
 }
 
 const Transaction = () => {
-  const query = new URLSearchParams(window.location.search);
+  const query = new URLSearchParams(`?${window.location.hash.split("?")[1]}`);
+  console.log(query);
   const atomical_id = query.get("atomical_id");
+  console.log("atomical_id", atomical_id);
   const [checkeds, setCheckeds] = useState<string[]>([]);
   const [visible, setVisible] = useState(false);
   const [isMerge, setIsMerge] = useState(false);
@@ -61,7 +63,7 @@ const Transaction = () => {
     originAddress,
     // isAllowedAddressType,
     xonlyPubHex,
-  } = useAddress();
+  } = useWizzProvider();
   const [viewType, setViewType] = useState<"main" | "sended">("main");
   const [txid, setTxid] = useState<string | undefined>(undefined);
   const [sendLoading, setSendLoading] = useState(false);
@@ -72,6 +74,7 @@ const Transaction = () => {
     fundingBalance,
     nonAtomUtxos,
     balanceMap,
+    loading: dataLoading,
     // allUtxos,
   } = useAtomicalWalletInfo(address);
   const { service } = useAtomicalService();
@@ -84,6 +87,7 @@ const Transaction = () => {
     ? atomUtxos.filter((o) => o.atomicals[0] === atomical_id)
     : [];
 
+  console.log("relatedAtomUtxos", relatedAtomUtxos);
   const { selectedAmount, selectedUtxos, amountToSend } = useMemo(() => {
     let selectedAmount = 0;
     let _amountsToSend: AmountToSend[] = [];
@@ -436,31 +440,37 @@ const Transaction = () => {
                 ))}
               </Space>
             </Checkbox.Group> */}
-            <div
-              className="pb-5 overflow-scroll"
-              style={{
-                maxHeight: "calc(100vh - 560px)",
-              }}
-            >
-              <Selector
-                ellipsis
-                options={relatedAtomUtxos.map((o) => ({
-                  label: o.value.toString(),
-                  value: o.txid,
-                }))}
-                value={checkeds}
-                onChange={(value, valueItem) => {
-                  console.log("valueItem", valueItem);
-                  setCheckeds(value);
+            {dataLoading ? (
+              <DotLoading />
+            ) : (
+              <div
+                className="pb-5 overflow-scroll"
+                style={{
+                  maxHeight: "calc(100vh - 560px)",
                 }}
-              />
-            </div>
+              >
+                <Selector
+                  ellipsis
+                  options={relatedAtomUtxos.map((o) => ({
+                    label: o.value.toString(),
+                    value: o.txid,
+                  }))}
+                  value={checkeds}
+                  onChange={(value, valueItem) => {
+                    console.log("valueItem", valueItem);
+                    setCheckeds(value);
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
         <div className="app-bottom">
           <button
             className={`w-full ${
-              !selectedAmount || (sendAddress && !sendAddressError)
+              !selectedAmount ||
+              !sendAddress ||
+              (sendAddress && !sendAddressError)
                 ? "bg-gray-400"
                 : "bg-primary"
             } text-white py-2 px-4 text-center rounded-full`}
@@ -508,7 +518,9 @@ const Transaction = () => {
           </div>
           <button
             className={`w-full mt-20  ${
-              sendLoading ? "bg-gray-500 text-black" : "bg-primary"
+              sendLoading || !sendAddress || (sendAddress && sendAddressError)
+                ? "bg-gray-500 text-black"
+                : "bg-primary"
             } text-white py-2 px-4 text-center rounded-full`}
             onClick={handleSubmit}
           >
