@@ -1,5 +1,7 @@
+// export const MEMPOOL_URL =
+//   import.meta.env.MODE === "development" ? "/mempool" : "https://mempool.space";
 export const MEMPOOL_URL = "https://mempool.space";
-
+console.log("MEMPOOL_URL", import.meta.env.MODE === "development");
 export interface MempoolUtxo {
   txid: string;
   vout: number;

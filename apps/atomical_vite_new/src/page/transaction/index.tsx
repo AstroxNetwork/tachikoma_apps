@@ -14,9 +14,9 @@ import ecc from "@bitcoinerlab/secp256k1";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
 import { ICON_ARROW, ICON_BACK } from "@/utils/resource";
-import { Switch } from "antd-mobile";
 import Input from "@/components/components/input";
 import DotLoading from "@/components/components/dotLoading";
+import Switch from "@/components/components/switch";
 const provider = new AstroXWizzInhouseProvider();
 bitcoin.initEccLib(ecc);
 
@@ -95,7 +95,7 @@ const Transaction = () => {
     let _amountsToSend: AmountToSend[] = [];
     const selectedUtxos: ISelectedUtxo[] = [];
     for (const utxo of atomUtxos) {
-      if (checkeds.includes(utxo.txid)) {
+      if (checkeds.includes(`${utxo.txid}i${utxo.index}`)) {
         selectedAmount += utxo.value;
         selectedUtxos.push(utxo);
         if (!isMerge) {
@@ -470,7 +470,7 @@ const Transaction = () => {
                   ellipsis
                   options={relatedAtomUtxos.map((o) => ({
                     label: o.value.toString(),
-                    value: o.txid,
+                    value: `${o.txid}i${o.index}`,
                   }))}
                   value={checkeds}
                   onChange={(value, valueItem) => {

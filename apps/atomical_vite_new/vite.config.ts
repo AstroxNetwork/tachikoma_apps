@@ -3,6 +3,7 @@ import path from "path";
 import react from "@vitejs/plugin-react-swc";
 // import { createHtmlPlugin } from "vite-plugin-html";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import mkcert from "vite-plugin-mkcert";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -43,6 +44,11 @@ export default defineConfig({
       protocolImports: true,
     }),
     react(),
+    mkcert({
+      force: true,
+      autoUpgrade: false,
+      savePath: path.resolve(__dirname, ".certs"),
+    }),
     // createHtmlPlugin({
     //   minify: true,
     //   /**
@@ -84,6 +90,20 @@ export default defineConfig({
       zlib: "browserify-zlib",
       util: "util",
       Buffer: "buffer",
+    },
+  },
+  server: {
+    https: true,
+    // hmr: {
+    //   protocol: 'ws',
+    //   host: 'localhost',
+    // },
+
+    proxy: {
+      "/mempool": {
+        target: "https://mempool.space",
+        changeOrigin: false,
+      },
     },
   },
 });
