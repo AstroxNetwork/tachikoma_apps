@@ -5,6 +5,7 @@ import QrCode from "qrcode.react";
 import { IAtomicalBalanceItem } from "@/interfaces/api";
 import { ICON_COPY } from "@/utils/resource";
 import { useEffect, useState } from "react";
+import DotLoading from "@/components/components/dotLoading";
 
 const IndexPage = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const IndexPage = () => {
     nonAtomUtxos,
     balanceMap,
     allUtxos,
+    loading,
   } = useAtomicalWalletInfo(address);
 
   useEffect(() => {
@@ -120,13 +122,19 @@ const IndexPage = () => {
               />
             </div>
             <div className="text-center py-10">
-              <h1 className="text-3xl font-bold">
-                {balanceMap && fundingBalance
-                  ? Object.keys(balanceMap)
-                      .map((key) => balanceMap[key])
-                      .map((o) => o.confirmed)
-                      .reduce((pre, cur) => pre + cur, fundingBalance)
-                  : "--"}{" "}
+              <h1 className="text-3xl font-bold flex items-center justify-center">
+                {loading ? (
+                  <DotLoading />
+                ) : (
+                  <>
+                    {balanceMap && fundingBalance
+                      ? Object.keys(balanceMap)
+                          .map((key) => balanceMap[key])
+                          .map((o) => o.confirmed)
+                          .reduce((pre, cur) => pre + cur, fundingBalance)
+                      : "--"}{" "}
+                  </>
+                )}
                 sats
               </h1>
             </div>
@@ -155,7 +163,9 @@ const IndexPage = () => {
                 title={
                   <div className="flex justify-between text-strong-color">
                     BTC
-                    <p className="text-strong-color">{fundingBalance} sats</p>
+                    <p className="text-strong-color flex items-center justify-center">
+                      {loading ? <DotLoading /> : <>{fundingBalance}</>} sats
+                    </p>
                   </div>
                 }
                 arrow={<div className="h-5"></div>}

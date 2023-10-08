@@ -14,8 +14,9 @@ import ecc from "@bitcoinerlab/secp256k1";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
 import { ICON_ARROW, ICON_BACK } from "@/utils/resource";
-import { Switch, DotLoading } from "antd-mobile";
+import { Switch } from "antd-mobile";
 import Input from "@/components/components/input";
+import DotLoading from "@/components/components/dotLoading";
 const provider = new AstroXWizzInhouseProvider();
 bitcoin.initEccLib(ecc);
 
