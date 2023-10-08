@@ -128,7 +128,14 @@ const Transaction = () => {
     return { selectedAmount, selectedUtxos, amountToSend: _amountsToSend };
   }, [checkeds, isMerge]);
 
-  console.log("send disabled", selectedAmount, sendAddress, sendAddressError);
+  console.log(
+    "send disabled",
+    selectedAmount,
+    sendAddress,
+    sendAddressError,
+    !selectedAmount || !sendAddress || (sendAddress && sendAddressError),
+    sendAddress && sendAddressError
+  );
 
   const validateAddress = (address: string): boolean => {
     try {
@@ -493,12 +500,16 @@ const Transaction = () => {
             className={`w-full ${
               !selectedAmount ||
               !sendAddress ||
-              (sendAddress && !sendAddressError)
+              (sendAddress && sendAddressError)
                 ? "bg-gray-400"
                 : "bg-primary"
             } text-white py-2 mb-5 px-4 text-center rounded-full`}
             onClick={() => setVisible(true)}
-            disabled={!selectedAmount}
+            disabled={
+              !selectedAmount ||
+              !sendAddress ||
+              (sendAddress && !!sendAddressError)
+            }
           >
             Send
           </button>
