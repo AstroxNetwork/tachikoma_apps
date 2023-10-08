@@ -7,6 +7,7 @@ import {
   useAtomicalService,
   useAtomicalWalletInfo,
 } from "@/services/hooks";
+import { Input as AntInput } from "antd-mobile";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as bitcoin from "bitcoinjs-lib";
@@ -54,7 +55,7 @@ const Transaction = () => {
   const query = new URLSearchParams(`?${window.location.hash.split("?")[1]}`);
   console.log(query);
   const atomical_id = query.get("atomical_id");
-  console.log("atomical_id", atomical_id);
+
   const [checkeds, setCheckeds] = useState<string[]>([]);
   const [visible, setVisible] = useState(false);
   const [isMerge, setIsMerge] = useState(false);
@@ -89,7 +90,7 @@ const Transaction = () => {
     ? atomUtxos.filter((o) => o.atomicals[0] === atomical_id)
     : [];
 
-  console.log("relatedAtomUtxos", relatedAtomUtxos);
+  console.log("sendAddress", sendAddress);
   const { selectedAmount, selectedUtxos, amountToSend } = useMemo(() => {
     let selectedAmount = 0;
     let _amountsToSend: AmountToSend[] = [];
@@ -127,9 +128,7 @@ const Transaction = () => {
     return { selectedAmount, selectedUtxos, amountToSend: _amountsToSend };
   }, [checkeds, isMerge]);
 
-  console.log("selectedAmount", selectedAmount);
-  console.log("selectedUtxos", selectedUtxos);
-  console.log("amountToSend", amountToSend);
+  console.log("send disabled", selectedAmount, sendAddress, sendAddressError);
 
   const validateAddress = (address: string): boolean => {
     try {
@@ -400,13 +399,20 @@ const Transaction = () => {
         <div className="app-body">
           <div className="mt-10">
             <p className="text-base">Address</p>
+            {/* <AntInput
+              onChange={(value) => {
+                console.log("change value", value);
+                setSendAddress(value);
+                validateAddress(value);
+              }}
+            /> */}
             <div className="flex items-center justify-between gap-2">
               <Input
                 className="text-lg"
                 value={sendAddress}
                 onChange={(e) => {
                   const value = e.target.value;
-                  console.log("value", value);
+                  console.log("change value", value);
                   setSendAddress(e.target.value);
                   validateAddress(e.target.value);
                 }}
@@ -492,7 +498,7 @@ const Transaction = () => {
                 : "bg-primary"
             } text-white py-2 mb-5 px-4 text-center rounded-full`}
             onClick={() => setVisible(true)}
-            disabled={!selectedAmount || (sendAddress && !sendAddressError)}
+            disabled={!selectedAmount}
           >
             Send
           </button>

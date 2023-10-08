@@ -50,11 +50,13 @@ export class MempoolService {
         c++;
       }
       const headers = new Headers();
-      headers.append("X-Client", "Wizz Wallet");
+      if ((window as any).callf) {
+        headers.append("X-Client", "Wizz Wallet");
+      }
       const res = await (window as any).fetch(new Request(url), {
         method: "GET",
         headers,
-        mode: "cors",
+        // mode: "cors",
         cache: "default",
       });
       const data = await res.json();
