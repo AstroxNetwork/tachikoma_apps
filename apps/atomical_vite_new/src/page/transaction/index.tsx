@@ -15,6 +15,7 @@ import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
 import { ICON_ARROW, ICON_BACK } from "@/utils/resource";
 import { Switch, DotLoading } from "antd-mobile";
+import Input from "@/components/components/input";
 const provider = new AstroXWizzInhouseProvider();
 bitcoin.initEccLib(ecc);
 
@@ -374,7 +375,7 @@ const Transaction = () => {
       <div
         className="app-container"
         style={{
-          minHeight: "calc(100vh - 90px)",
+          minHeight: "calc(100vh - 80px)",
         }}
       >
         <div className="app-header">
@@ -398,34 +399,49 @@ const Transaction = () => {
         <div className="app-body">
           <div className="mt-10">
             <p className="text-base">Address</p>
-            <div className="w-full h-9 border bg-body-bg border-zinc-500 outline-none px-4">
-              <input
-                className="w-full h-full bg-body-bg outline-none"
+            <div className="flex items-center justify-between gap-2">
+              <Input
+                className="text-lg"
+                value={sendAddress}
                 onChange={(e) => {
+                  const value = e.target.value;
+                  console.log("value", value);
                   setSendAddress(e.target.value);
                   validateAddress(e.target.value);
                 }}
               />
+              <a
+                className="w-14"
+                onClick={async () => {
+                  const text = await navigator.clipboard.readText();
+                  console.log(text);
+                  if (text) {
+                    setSendAddress(text);
+                    validateAddress(text);
+                  }
+                }}
+              >
+                Paste
+              </a>
             </div>
-            {sendAddressError && (
-              <p className="text-red-500">{sendAddressError}</p>
-            )}
-            <div className="flex items-center justify-between mt-2 mb-2">
+
+            <p className="text-red-500 h-7">{sendAddressError}</p>
+            <div className="flex items-center justify-between mt-1 mb-1">
               BTC Balance:
               <p className="text-right">{fundingBalance} sats</p>
             </div>
-            <div className="flex items-center justify-between mt-2 mb-2">
+            <div className="flex items-center justify-between mt-1 mb-1">
               Fee:
               <p className="text-right">{fee} sats</p>
             </div>
-            <div className="flex items-center justify-between mt-2 mb-2">
+            <div className="flex items-center justify-between mt-1 mb-1">
               Merge Value:
               <Switch
                 checked={isMerge}
                 onChange={(checked) => setIsMerge(checked)}
               />
             </div>
-            <h2 className="text-base mt-3 mb-1">Select token</h2>
+            <h2 className="text-base mt-2 mb-1">Select token</h2>
             {/* <Checkbox.Group
               value={checkeds}
               onChange={(v) => {
@@ -446,7 +462,7 @@ const Transaction = () => {
               <div
                 className="pb-5 overflow-scroll"
                 style={{
-                  maxHeight: "calc(100vh - 560px)",
+                  maxHeight: "calc(100vh - 580px)",
                 }}
               >
                 <Selector
@@ -473,7 +489,7 @@ const Transaction = () => {
               (sendAddress && !sendAddressError)
                 ? "bg-gray-400"
                 : "bg-primary"
-            } text-white py-2 px-4 text-center rounded-full`}
+            } text-white py-2 mb-5 px-4 text-center rounded-full`}
             onClick={() => setVisible(true)}
             disabled={!selectedAmount || (sendAddress && !sendAddressError)}
           >
