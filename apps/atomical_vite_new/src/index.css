@@ -14,11 +14,20 @@
   -webkit-font-smoothing: antialiased;
   /* -moz-osx-font-smoothing: grayscale; */
   -webkit-text-size-adjust: 100%;
+  
+}
+
+::root::root {
+  --adm-color-border: #333;
+}
+
+a {
+  color: #3ADCEF !important;
 }
 
 @media (prefers-color-scheme: light) {
   :root:root {
-    --ax-color-primary: #1677ff;
+    --ax-color-primary: #3ADCEF;
     --ax-body-bg: #f8fafc;
     --ax-body-color: #6a6d7c;
     --ax-strong-color: #262833;
@@ -27,7 +36,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:root {
-    --ax-color-primary: #1677ff;
+    --ax-color-primary: #3ADCEF;
     --ax-body-bg:  #101213;
     --ax-body-color: #a8abbe;
     --ax-strong-color: #ffffff;
@@ -42,6 +51,6 @@
 
 body {
   margin: 0;
-  background-color:  #f8fafc !important;
-  color: #6a6d7c !important;
+  background-color:  #0b0b0f !important;
+  color: #a8abbe !important;
 }

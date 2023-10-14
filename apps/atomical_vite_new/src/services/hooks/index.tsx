@@ -2,14 +2,14 @@ import { ElectrumApi } from "@/clients/eletrum";
 import { AtomicalService } from "../atomical";
 import {
   useEffect,
-  useRef,
   useState,
   useContext,
   createContext,
   FunctionComponent,
   ReactNode,
+  useCallback,
 } from "react";
-import { IAtomicalBalances, ISelectedUtxo } from "@/interfaces/api";
+import { IAtomicalBalanceItem, ISelectedUtxo } from "@/interfaces/api";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
 import { fromPubToP2tr, toXOnly } from "@/clients/utils";
@@ -19,64 +19,40 @@ const provider = new AstroXWizzInhouseProvider();
 
 const ELECTRUMX_HTTP_PROXY = "https://ep.atomicals.xyz/proxy";
 const api = ElectrumApi.createClient(ELECTRUMX_HTTP_PROXY);
-//@ts-ignore
 const atomicalService = new AtomicalService(api);
 
-interface UseAtomicalService {
-  service: AtomicalService | undefined;
-  // isTimeout: boolean;
-}
-
-export function useAtomicalService(): UseAtomicalService {
-  const [service, setService] = useState<AtomicalService | undefined>();
-  const connectRef = useRef<boolean>();
-  useEffect(() => {
-    (async () => {
-      // setTimeout(() => {
-      //   if (!connectRef.current) {
-      //     setIsTimeout(true);
-      //   }
-      // }, timeout);
-      await atomicalService.electrumApi.resetConnection();
-      connectRef.current = true;
-      setService(atomicalService);
-    })();
-  }, []);
-  return {
-    service,
-  };
-}
-
 export function useAtomicalWalletInfo(address: string) {
-  const { service } = useAtomicalService();
   const [loading, setLoading] = useState<boolean>(false);
   const [balance, setBalance] = useState<number | undefined>(undefined);
   const [fundingBalance, setFundingBalance] = useState<number | undefined>(
     undefined
   );
   const [nonAtomUtxos, setNonAtomUtxos] = useState<UTXO[]>([]);
-  const [balanceMap, setBalanceMap] = useState<IAtomicalBalances | undefined>(
-    undefined
-  );
+  const [balanceMap, setBalanceMap] = useState<IAtomicalBalanceItem[]>([]);
   const [allUtxos, setAllUxtos] = useState<UTXO[]>([]);
   const [atomUtxos, setAtomUtxos] = useState<ISelectedUtxo[]>([]);
   const [error, setError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    if (address && service) {
+    if (address) {
       init();
     }
-  }, [address, service]);
+  }, [address]);
 
   const init = async () => {
     try {
       setLoading(true);
-      const walletInfo = await service.walletInfo(address, false);
+      const walletInfo = await atomicalService.walletInfo(address, false);
       const { data } = walletInfo;
       const { atomicals_confirmed, atomicals_balances, atomicals_utxos } = data;
       setBalance(atomicals_confirmed);
-      setBalanceMap(atomicals_balances as IAtomicalBalances);
-      const _allUtxos = await service.electrumApi.getUnspentAddress(address);
+      const _atomicals_balances = Object.keys(atomicals_balances).map(
+        (k) => atomicals_balances[k]
+      );
+      setBalanceMap(_atomicals_balances);
+      const _allUtxos = await atomicalService.electrumApi.getUnspentAddress(
+        address
+      );
       console.log("mempoolService start");
       const mempoolUtxos: MempoolUtxo[] = await mempoolService.getUtxo(address);
       console.log("mempoolService end");
@@ -164,6 +140,19 @@ export function useAtomicalWalletInfo(address: string) {
     error,
     loading,
   };
+}
+
+export function useAtomicalsCallback() {
+  return useCallback(async (address) => {
+    const { atomicals_confirmed, atomicals_balances, atomicals_utxos } =
+      await atomicalService.walletInfo(address, false);
+
+    return {
+      atomicals_confirmed,
+      atomicals_balances,
+      atomicals_utxos,
+    };
+  }, []);
 }
 
 interface UseWizzProvider {

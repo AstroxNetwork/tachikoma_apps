@@ -3,10 +3,11 @@
   --prefix-width: 'auto';
   --prefix-padding-right: 12px;
   --align-items: center;
-  --active-background-color: var(--adm-color-border);
-  --border-inner: solid 1px var(--adm-color-border);
-  --border-top: solid 1px var(--adm-color-border);
-  --border-bottom: solid 1px var(--adm-color-border);
+  --adm-color-border: #333;
+  --active-background-color: #333;
+  --border-inner: solid 1px #333;
+  --border-top: solid 1px #333;
+  --border-bottom: solid 1px #333;
   --padding-left: 12px;
   --padding-right: 12px;
   --font-size: var(--adm-font-size-9);
@@ -19,7 +20,7 @@
   }
 
   &-body {
-    background-color: var(--adm-color-background);
+    // background-color: var(--adm-color-background);
     overflow: hidden;
     font-size: var(--font-size);
   }
@@ -50,9 +51,9 @@
 
 .rc-list-item {
   display: block;
-  padding-left: var(--padding-left);
+  // padding-left: var(--padding-left);
   position: relative;
-  background-color: var(--adm-color-background);
+  // background-color: var(--adm-color-background);
   line-height: 1.5;
   color: var(--ax-strong-color);
 
@@ -66,8 +67,9 @@
     display: flex;
     align-items: var(--align-items);
     justify-content: flex-start;
-    border-top: var(--border-inner);
+    border-top: 1px solid #5D5D6c;
     padding-right: var(--padding-right);
+    padding-left: var(--padding-left);
 
     &-prefix {
       width: var(--prefix-width);

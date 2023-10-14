@@ -11,3 +11,12 @@ export const useTransactionStore = create<TransactionState>()((set) => ({
   bears: 0,
   increase: (by) => set((state) => ({ bears: state.bears + by })),
 }));
+
+interface AtomicalState {
+  data: any;
+}
+
+export const useAtomicalStore = create<AtomicalState>()((set) => ({
+  data: null,
+  setAtomical: (payload) => set(() => ({ data: payload })),
+}));

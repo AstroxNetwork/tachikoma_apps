@@ -36,6 +36,10 @@ export class MempoolService {
     return this.httpGet(`/api/address/${address}/utxo`, {});
   }
 
+  async broadCast(txHex: string) {
+    return this.httpPost(`/api/tx`, txHex);
+  }
+
   httpGet = async (route: string, params: any) => {
     try {
       let url = this.getHost() + route;
@@ -63,6 +67,29 @@ export class MempoolService {
       return data;
     } catch (error) {
       throw `http get error: ${error}`;
+    }
+  };
+  httpPost = async (route: string, params: any) => {
+    try {
+      const url = this.getHost() + route;
+      const headers = new Headers();
+      if ((window as any).callf) {
+        headers.append("X-Client", "Wizz Wallet");
+      }
+      const res = (await (window as any).fetch(new Request(url), {
+        method: "POST",
+        headers,
+        // mode: "cors",
+        cache: "default",
+        body:
+          typeof params === "string" || params instanceof ArrayBuffer
+            ? params
+            : JSON.stringify(params),
+      })) as Response;
+      const txt = await res.text();
+      return txt;
+    } catch (error) {
+      throw `http post error: ${error}`;
     }
   };
 }

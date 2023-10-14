@@ -1,14 +1,42 @@
 import React, { useRef, useEffect } from "react";
 import { NativeProps } from "@/components/utils/native-props";
 import "./input.less";
+type NativeInputProps = React.DetailedHTMLProps<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  HTMLInputElement
+>;
 
-type InputProps = {
+type InputMyProps = {
   value?: string;
-
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-} & NativeProps;
+} & Pick<
+  NativeInputProps,
+  | "maxLength"
+  | "minLength"
+  | "autoComplete"
+  | "autoFocus"
+  | "pattern"
+  | "inputMode"
+  | "type"
+  | "name"
+  | "onFocus"
+  | "onBlur"
+  | "autoCapitalize"
+  | "autoCorrect"
+  | "onKeyDown"
+  | "onKeyUp"
+  | "onCompositionStart"
+  | "onCompositionEnd"
+  | "onClick"
+  | "step"
+  | "id"
+  | "placeholder"
+  | "readOnly"
+  | "disabled"
+> &
+  NativeProps<"input">;
 
-const Input: React.FC<InputProps> = (props) => {
+const Input: React.FC<InputMyProps> = (props) => {
   const { value, onChange, className, ...rests } = props;
   const inputRef = useRef<HTMLInputElement>(null);
   const [isFocus, setIsFocus] = React.useState<boolean>(false);
@@ -36,9 +64,7 @@ const Input: React.FC<InputProps> = (props) => {
 
   return (
     <div
-      className={`w-full h-9 border relative bg-body-bg flex items-center overflow-hidden whitespace-nowrap ${
-        isFocus ? "border-primary" : "border-zinc-500"
-      } outline-none px-4 ${className}`}
+      className={`w-full relative flex items-center overflow-hidden ${className}`}
       onClick={focus}
     >
       {/* {value}
@@ -46,6 +72,7 @@ const Input: React.FC<InputProps> = (props) => {
 
       <input
         ref={inputRef}
+        value={value}
         {...rests}
         onChange={(e) => {
           console.log("change ", e);

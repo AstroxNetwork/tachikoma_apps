@@ -1,4 +1,4 @@
-import { CheckCircleFill, CheckCircleOutline } from "antd-mobile-icons";
+import { ICON_OK, ICON_OK_ACTIVE } from "@/utils/resource";
 import { useState } from "react";
 
 type Item = {
@@ -56,9 +56,9 @@ const Selector: React.FC<SelectorProps> = (props) => {
             {!disabled && (
               <div className="flex justify-end">
                 {selected?.includes(item.value) ? (
-                  <CheckCircleFill className={`text-primary text-xl`} />
+                  <img src={ICON_OK_ACTIVE} className="h-5" alt="" />
                 ) : (
-                  <CheckCircleOutline className="text-xl" />
+                  <img src={ICON_OK} className="h-5" alt="" />
                 )}
               </div>
             )}

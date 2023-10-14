@@ -1,12 +1,8 @@
 import { detectAddressTypeToScripthash } from "@/clients/utils";
-import { Mask } from "@/components";
+import { Mask, Toast } from "@/components";
 import Selector from "@/components/components/selector";
 import { AmountToSend, IAtomicalsInfo, ISelectedUtxo } from "@/interfaces/api";
-import {
-  useWizzProvider,
-  useAtomicalService,
-  useAtomicalWalletInfo,
-} from "@/services/hooks";
+import { useWizzProvider, useAtomicalWalletInfo } from "@/services/hooks";
 import { Input as AntInput } from "antd-mobile";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -14,10 +10,11 @@ import * as bitcoin from "bitcoinjs-lib";
 import ecc from "@bitcoinerlab/secp256k1";
 import { UTXO } from "@/interfaces/utxo";
 import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
-import { ICON_ARROW, ICON_BACK } from "@/utils/resource";
+import { ICON_ARROW, ICON_BACK, ICON_OK_ACTIVE } from "@/utils/resource";
 import Input from "@/components/components/input";
 import DotLoading from "@/components/components/dotLoading";
 import Switch from "@/components/components/switch";
+import { mempoolService } from "@/clients/mempool";
 const provider = new AstroXWizzInhouseProvider();
 bitcoin.initEccLib(ecc);
 
@@ -60,7 +57,7 @@ const Transaction = () => {
   const [visible, setVisible] = useState(false);
   const [isMerge, setIsMerge] = useState(false);
   const [sendAddress, setSendAddress] = useState("");
-  const [fee, setFee] = useState(0);
+  const [fee, setFee] = useState<number>();
   const {
     address,
     originAddress,
@@ -80,12 +77,11 @@ const Transaction = () => {
     loading: dataLoading,
     // allUtxos,
   } = useAtomicalWalletInfo(address);
-  const { service } = useAtomicalService();
   const [sendAddressError, setSendAddressError] = useState<string | undefined>(
     undefined
   );
   const navigate = useNavigate();
-  const item = balanceMap && balanceMap[atomical_id as string];
+  const item = balanceMap.find((o) => o.atomical_id === atomical_id);
   const relatedAtomUtxos = atomUtxos
     ? atomUtxos.filter((o) => o.atomicals[0] === atomical_id)
     : [];
@@ -166,10 +162,12 @@ const Transaction = () => {
       20,
       false
     );
+    console.log("send", txHex);
     if (txHex) {
       try {
         setSendLoading(true);
-        const txId = await service.electrumApi.broadcast(txHex);
+        const txId = await mempoolService.broadCast(txHex);
+        console.log("send end", txId);
         if (typeof txId !== "string") {
           throw new Error("txId is not string");
         }
@@ -308,16 +306,17 @@ const Transaction = () => {
         });
       }
       const printedPsbt = psbt.toHex();
-      console.log(printedPsbt);
-
+      console.log("signPsbt start", printedPsbt);
       try {
         const s = await provider.signPsbt(originAddress, printedPsbt, {
           addressType: "p2pkhtr",
         });
-        console.log({ s });
+        console.log("signPsbt end", s);
         const signedPsbt = bitcoin.Psbt.fromHex(s);
         // signedPsbt.finalizeAllInputs();
+        console.log("signedPsbt", signedPsbt);
         const tx = signedPsbt.extractTransaction();
+        console.log("transationend", tx);
         console.log(tx.toHex());
         return {
           txHex: tx.toHex(),
@@ -336,28 +335,24 @@ const Transaction = () => {
   if (viewType === "sended") {
     return (
       <>
-        <div
-          className="app-container"
-          style={{
-            minHeight: "calc(100vh - 90px)",
-          }}
-        >
+        <div className="app-container">
           <div className="app-body">
             <div className="mt-20">
-              <div className="text-center py-10">
+              <div className="flex flex-col justify-center items-center text-center py-8">
+                <img src={ICON_OK_ACTIVE} className="w-16 mb-3" alt="" />
                 <h1 className="text-3xl font-bold">Transaction Submitted!</h1>
               </div>
             </div>
             <div className="flex justify-between text-lg mt-8 mb-2">
               <p>Amount</p>
               <p className="text-strong-color text-right">
-                {selectedAmount} {item.ticker.toLocaleUpperCase()}
+                {selectedAmount} {item?.ticker?.toLocaleUpperCase()}
               </p>
             </div>
-            <div className="flex justify-between text-lg mt-8 mb-2">
+            <div className="flex justify-between mt-8 mb-2">
               <p>Address</p>
               <p className="text-strong-color text-right">
-                {sendAddress.slice(0, 6)}...{sendAddress.slice(-4)}
+                {sendAddress?.slice(0, 6)}...{sendAddress?.slice(-4)}
               </p>
             </div>
             <div className="flex items-center justify-between mt-2 mb-2">
@@ -366,12 +361,27 @@ const Transaction = () => {
             </div>
             <div className="flex items-center justify-between mt-2 mb-2">
               Txid:
-              <a className="text-right">
-                {txid.slice(0, 6)}...{txid.slice(-4)}
+              <a
+                className="text-right"
+                onTouchEnd={() => {
+                  navigator.clipboard.writeText(txid);
+                  Toast.show("Copied");
+                }}
+              >
+                {txid?.slice(0, 6)}...{txid?.slice(-4)}
               </a>
             </div>
           </div>
-          <div className="app-bottom"></div>
+          <div className="app-bottom">
+            <button
+              className="bg-primary text-black font-bold py-2 mb-5 px-4 text-center rounded-full"
+              onTouchEnd={() => {
+                navigate(-1);
+              }}
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       </>
     );
@@ -388,11 +398,11 @@ const Transaction = () => {
         <div className="app-header">
           <div className="pt-4 flex items-center">
             <img
-              className="text-2xl w-5"
+              className="text-2xl w-6"
               src={ICON_BACK}
-              onClick={() => navigate(-1)}
+              onTouchEnd={() => navigate(-1)}
             />
-            <h1 className="text-xl ml-4">
+            <h1 className="text-xl ml-4 text-strong-color">
               Transfer {item?.ticker.toLocaleUpperCase()}
             </h1>
           </div>
@@ -415,8 +425,9 @@ const Transaction = () => {
             /> */}
             <div className="flex items-center justify-between gap-2">
               <Input
-                className="text-lg"
+                className="text-base leading-9"
                 value={sendAddress}
+                placeholder="Address"
                 onChange={(e) => {
                   const value = e.target.value;
                   console.log("change value", value);
@@ -426,10 +437,10 @@ const Transaction = () => {
               />
               <a
                 className="w-14"
-                onClick={async () => {
-                  const text = await navigator.clipboard.readText();
+                onTouchEnd={async () => {
+                  const text = await window.navigator.clipboard.readText();
                   console.log(text);
-                  if (text) {
+                  if (text && text.length > 0) {
                     setSendAddress(text);
                     validateAddress(text);
                   }
@@ -455,6 +466,11 @@ const Transaction = () => {
                 onChange={(checked) => setIsMerge(checked)}
               />
             </div>
+            {isMerge && (
+              <p>
+                Note: The multiple ARC-20 token will be merged into one token.
+              </p>
+            )}
             <h2 className="text-base mt-2 mb-1">Select token</h2>
             {/* <Checkbox.Group
               value={checkeds}
@@ -476,7 +492,7 @@ const Transaction = () => {
               <div
                 className="pb-5 overflow-scroll"
                 style={{
-                  maxHeight: "calc(100vh - 580px)",
+                  maxHeight: "calc(100vh - 590px)",
                 }}
               >
                 <Selector
@@ -503,8 +519,10 @@ const Transaction = () => {
               (sendAddress && sendAddressError)
                 ? "bg-gray-400"
                 : "bg-primary"
-            } text-white py-2 mb-5 px-4 text-center rounded-full`}
-            onClick={() => setVisible(true)}
+            } text-black font-bold py-2 mb-5 px-4 text-center rounded-full`}
+            onClick={() => {
+              setVisible(true);
+            }}
             disabled={
               !selectedAmount ||
               !sendAddress ||
@@ -553,10 +571,13 @@ const Transaction = () => {
           <button
             className={`w-full mt-20  ${
               sendLoading || !sendAddress || (sendAddress && sendAddressError)
-                ? "bg-gray-500 text-black"
+                ? "bg-gray-500"
                 : "bg-primary"
-            } text-white py-2 px-4 text-center rounded-full`}
+            } text-black font-bold py-2 px-4 text-center rounded-full`}
             onClick={handleSubmit}
+            disabled={
+              sendLoading || !sendAddress || !!(sendAddress && sendAddressError)
+            }
           >
             {sendLoading ? "Sending" : "Confirm to send"}
           </button>
