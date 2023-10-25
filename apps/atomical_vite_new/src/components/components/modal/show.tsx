@@ -1,13 +1,13 @@
-import { Modal, ModalProps } from './modal'
-import { renderImperatively } from '../../utils/render-imperatively'
+import { Modal, ModalProps } from "./modal";
+import { renderImperatively } from "../utils/render-imperatively";
 
-export type ModalShowProps = Omit<ModalProps, 'visible'>
+export type ModalShowProps = Omit<ModalProps, "visible">;
 
 export type ModalShowHandler = {
-  close: () => void
-}
+  close: () => void;
+};
 
-export const closeFnSet = new Set<() => void>()
+export const closeFnSet = new Set<() => void>();
 
 export function show(props: ModalShowProps) {
   const handler: ModalShowHandler = renderImperatively(
@@ -15,11 +15,11 @@ export function show(props: ModalShowProps) {
       {...props}
       visible
       afterClose={() => {
-        closeFnSet.delete(handler.close)
-        props.afterClose?.()
+        closeFnSet.delete(handler.close);
+        props.afterClose?.();
       }}
     />
-  )
-  closeFnSet.add(handler.close)
-  return handler
+  );
+  closeFnSet.add(handler.close);
+  return handler;
 }

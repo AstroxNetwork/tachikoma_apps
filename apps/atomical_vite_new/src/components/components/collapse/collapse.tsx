@@ -1,14 +1,14 @@
 import React, { FC, ReactElement, isValidElement, useRef } from "react";
-import { NativeProps, withNativeProps } from "../../utils/native-props";
+import { NativeProps, withNativeProps } from "../utils/native-props";
 import List from "../list";
 import { DownOutline } from "antd-mobile-icons";
 import classNames from "classnames";
 import { useSpring, animated } from "@react-spring/web";
-import { usePropsValue } from "../../utils/use-props-value";
+import { usePropsValue } from "../utils/use-props-value";
 import { useMount } from "ahooks";
-import { useShouldRender } from "../../utils/should-render";
-import { useIsomorphicUpdateLayoutEffect } from "../../utils/use-isomorphic-update-layout-effect";
-import { traverseReactNode } from "../../utils/traverse-react-node";
+import { useShouldRender } from "../utils/should-render";
+import { useIsomorphicUpdateLayoutEffect } from "../utils/use-isomorphic-update-layout-effect";
+import { traverseReactNode } from "../utils/traverse-react-node";
 
 const classPrefix = `rc-collapse`;
 

@@ -1,7 +1,6 @@
-// export const MEMPOOL_URL =
-//   import.meta.env.MODE === "development" ? "/mempool" : "https://mempool.space";
-export const MEMPOOL_URL = "https://mempool.space";
-console.log("MEMPOOL_URL", import.meta.env.MODE === "development");
+import { MEMPOOL_URL } from "@/constans";
+import { TxItem } from "@/interfaces/api";
+
 export interface MempoolUtxo {
   txid: string;
   vout: number;
@@ -13,7 +12,6 @@ export interface MempoolUtxo {
   };
   value: number;
 }
-
 export class MempoolService {
   constructor(public host: string = MEMPOOL_URL) {}
   public getHost() {
@@ -36,62 +34,36 @@ export class MempoolService {
     return this.httpGet(`/api/address/${address}/utxo`, {});
   }
 
-  async broadCast(txHex: string) {
-    return this.httpPost(`/api/tx`, txHex);
+  async getBlockHeight(): Promise<number> {
+    return this.httpGet("/api/blocks/tip/height", {});
+  }
+
+  async txsMempool(address: string): Promise<TxItem[]> {
+    return this.httpGet(`/api/address/${address}/txs/mempool`, {});
   }
 
   httpGet = async (route: string, params: any) => {
-    try {
-      let url = this.getHost() + route;
-      let c = 0;
-      for (const id in params) {
-        if (c == 0) {
-          url += "?";
-        } else {
-          url += "&";
-        }
-        url += `${id}=${params[id]}`;
-        c++;
+    let url = this.getHost() + route;
+    let c = 0;
+    for (const id in params) {
+      if (c == 0) {
+        url += "?";
+      } else {
+        url += "&";
       }
-      const headers = new Headers();
-      if ((window as any).callf) {
-        headers.append("X-Client", "Wizz Wallet");
-      }
-      const res = await (window as any).fetch(new Request(url), {
-        method: "GET",
-        headers,
-        // mode: "cors",
-        cache: "default",
-      });
-      const data = await res.json();
-      return data;
-    } catch (error) {
-      throw `http get error: ${error}`;
+      url += `${id}=${params[id]}`;
+      c++;
     }
-  };
-  httpPost = async (route: string, params: any) => {
-    try {
-      const url = this.getHost() + route;
-      const headers = new Headers();
-      if ((window as any).callf) {
-        headers.append("X-Client", "Wizz Wallet");
-      }
-      const res = (await (window as any).fetch(new Request(url), {
-        method: "POST",
-        headers,
-        // mode: "cors",
-        cache: "default",
-        body:
-          typeof params === "string" || params instanceof ArrayBuffer
-            ? params
-            : JSON.stringify(params),
-      })) as Response;
-      const txt = await res.text();
-      return txt;
-    } catch (error) {
-      throw `http post error: ${error}`;
-    }
+    const headers = new Headers();
+    // headers.append("X-Client", "ATOM Wallet");
+    const res = await fetch(new Request(url), {
+      method: "GET",
+      headers,
+      mode: "cors",
+      cache: "default",
+    });
+    console.log({ res });
+    const data = await res.json();
+    return data;
   };
 }
-
-export const mempoolService = new MempoolService(MEMPOOL_URL);

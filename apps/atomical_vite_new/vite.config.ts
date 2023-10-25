@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react-swc";
 // import { createHtmlPlugin } from "vite-plugin-html";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import mkcert from "vite-plugin-mkcert";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -22,6 +23,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    nodeResolve({ browser: false, preferBuiltins: false }),
     nodePolyfills({
       // To add only specific polyfills, add them here. If no option is passed, adds all polyfills
       include: ["path"],

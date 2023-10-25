@@ -5,8 +5,8 @@ import React, {
   useRef,
 } from "react";
 import classNames from "classnames";
-import { NativeProps, withNativeProps } from "../../utils/native-props";
-import { mergeProps } from "@/components/utils/merge-props";
+import { NativeProps, withNativeProps } from "../utils/native-props";
+import { mergeProps } from "@/components/components/utils/merge-props";
 
 const classPrefix = `rc-list`;
 

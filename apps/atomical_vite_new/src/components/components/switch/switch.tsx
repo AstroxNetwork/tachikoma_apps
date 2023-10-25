@@ -1,10 +1,10 @@
 import classNames from "classnames";
 import React, { FC, ReactNode, useState } from "react";
-import { NativeProps, withNativeProps } from "../../utils/native-props";
-import { usePropsValue } from "../../utils/use-props-value";
+import { NativeProps, withNativeProps } from "../utils/native-props";
+import { usePropsValue } from "../utils/use-props-value";
 import { SpinIcon } from "./spin-icon";
-import { isPromise } from "../../utils/validate";
-import { mergeProps } from "@/components/utils/merge-props";
+import { isPromise } from "../utils/validate";
+import { mergeProps } from "@/components/components/utils/merge-props";
 import { useSpring, animated } from "react-spring";
 
 const classPrefix = `adm-switch`;

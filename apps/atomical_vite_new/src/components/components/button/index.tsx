@@ -1,10 +1,10 @@
 import classNames from "classnames";
 import { useImperativeHandle, useRef, forwardRef, useState } from "react";
-import { mergeProps } from "../../utils/merge-props";
-import { NativeProps, withNativeProps } from "../../utils/native-props";
+import { mergeProps } from "../utils/merge-props";
+import { NativeProps, withNativeProps } from "../utils/native-props";
 import "./button.less";
-import { isPromise } from "@/components/utils/validate";
-import { DotLoading } from "antd-mobile";
+import { isPromise } from "@/components/components/utils/validate";
+import DotLoading from "../dotLoading";
 
 const classPrefix = `rc-button`;
 
@@ -50,7 +50,7 @@ const defaultProps: ButtonProps = {
   fill: "solid",
   block: false,
   loading: false,
-  loadingIcon: <DotLoading color="currentColor" />,
+  loadingIcon: <DotLoading />,
   type: "button",
   shape: "default",
   size: "middle",

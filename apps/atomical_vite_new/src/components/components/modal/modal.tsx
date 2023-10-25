@@ -2,16 +2,13 @@ import React, { FC, ReactNode } from "react";
 import classNames from "classnames";
 import Mask from "../mask";
 import type { MaskProps } from "../mask";
-import { NativeProps, withNativeProps } from "../../utils/native-props";
-import {
-  GetContainer,
-  renderToContainer,
-} from "../../utils/get-render-container";
+import { NativeProps, withNativeProps } from "../utils/native-props";
+import { GetContainer, renderToContainer } from "../utils/get-render-container";
 import {
   PropagationEvent,
   withStopPropagation,
-} from "../../utils/with-stop-propagation";
-import { mergeProps } from "../../utils/merge-props";
+} from "../utils/with-stop-propagation";
+import { mergeProps } from "../utils/merge-props";
 import { Action, ModalActionButton } from "./modal-action-button";
 
 export type ModalProps = {

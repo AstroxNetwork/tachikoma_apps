@@ -1,3 +1,6 @@
+import { IAtomicalItem } from "@/interfaces/api";
+import punycode from "punycode";
+
 //字符串千分号
 export function toThousands(num: number | string) {
   let numStr = num.toString();
@@ -10,6 +13,14 @@ export function toThousands(num: number | string) {
     result = numStr + result;
   }
   return result;
+}
+
+export function isHexString(str: string) {
+  const hexRegex = /^0x[0-9a-fA-F]+$/;
+  // 检查是否包含 0x/0X 前缀，如果有，忽略它
+  const normalizedStr =
+    str.startsWith("0x") || str.startsWith("0X") ? str.slice(2) : str;
+  return hexRegex.test("0x" + normalizedStr);
 }
 
 export function flattenObject(ob: any = {}) {
@@ -66,4 +77,40 @@ export async function svgBase64ToPngBase64(imageBase64) {
 
     // };
   });
+}
+
+export function returnImageType(item: IAtomicalItem): {
+  type: string;
+  content: string;
+  tag: string;
+} {
+  let ct, content, type, tag;
+  if (item.$realm) {
+    type = "realm";
+    tag = "Realm";
+    content = item.$full_realm_name!.toLowerCase().startsWith("xn--")
+      ? punycode.decode(item.$full_realm_name!)
+      : item.$full_realm_name;
+  } else {
+    type = "nft";
+    ct = findValueInDeepObject(item.mint_data?.fields, "$ct");
+    if (ct) {
+      if (ct.endsWith("webp")) {
+        ct = "image/webp";
+      } else if (ct.endsWith("svg")) {
+        ct = "image/svg+xml";
+      } else if (ct.endsWith("png")) {
+        ct = "image/png";
+      } else if (ct.endsWith("jpg") || ct.endsWith("jpeg")) {
+        ct = "image/jpeg";
+      } else if (ct.endsWith("gif")) {
+        ct = "image/gif";
+      }
+      const data = findValueInDeepObject(item.mint_data?.fields, "$d");
+      const b64String = Buffer.from(data, "hex").toString("base64");
+      content = `data:${ct};base64,${b64String}`;
+      tag = ct;
+    }
+  }
+  return { type, content, tag };
 }

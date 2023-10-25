@@ -1,31 +1,20 @@
-import { List, Mask, Modal, Toast } from "@/components";
+import { List, Mask, Modal, Toast, DotLoading } from "@/components";
 import { useNavigate } from "react-router-dom";
-import { useWizzProvider, useAtomicalWalletInfo } from "@/services/hooks";
+import { useWizzProvider } from "@/services/hooks";
 import QrCode from "qrcode.react";
-import { IAtomicalBalanceItem } from "@/interfaces/api";
 import { ICON_BTC, ICON_COPY } from "@/utils/resource";
 import { useEffect, useState, useRef } from "react";
-import DotLoading from "@/components/components/dotLoading";
 import { findValueInDeepObject } from "@/utils";
+import { useAtomicalStore } from "@/store/app";
+import NFTCard from "@/components/nftCard";
 
 const IndexPage = () => {
   const navigate = useNavigate();
-  const {
-    address,
-    addressType,
-    // isAllowedAddressType,
-    // xonlyPubHex,
-  } = useWizzProvider();
+  const { address, addressType } = useWizzProvider();
   const [visible, setVisible] = useState<boolean>(false);
-  const {
-    balance,
-    atomUtxos,
-    fundingBalance,
-    nonAtomUtxos,
-    balanceMap,
-    allUtxos,
-    loading,
-  } = useAtomicalWalletInfo(address);
+  const { atomicals, loading } = useAtomicalStore((state) => state);
+  const [curTab, setCurTab] = useState<string>("1");
+  console.log("atomical", atomicals);
 
   useEffect(() => {
     (async () => {
@@ -81,59 +70,126 @@ const IndexPage = () => {
       content: (
         <>
           <List>
-            {balanceMap
-              .filter((v: IAtomicalBalanceItem) => {
-                return v.type === "FT";
-              })
-              .map((o: IAtomicalBalanceItem) => {
-                const data = findValueInDeepObject(
-                  o.data.mint_data?.fields,
-                  "$d"
-                );
-                const b64String = Buffer.from(data, "hex").toString("base64");
-                return (
-                  <List.Item
-                    key={o.atomical_id}
-                    title={
-                      <div
-                        className="flex justify-between"
-                        onTouchEnd={(e) => {
-                          alert.close();
-                          e.stopPropagation();
-                          navigate(`/transation?atomical_id=${o.atomical_id}`);
-                        }}
-                      >
-                        <div className="flex items-center">
-                          <img
-                            src={`data:image/png;base64,${b64String}`}
-                            className="mr-2 h-5 overflow-hidden rounded-full"
-                            alt=""
-                          />
-                          <span className="text-strong-color">{`${o.ticker.toLocaleUpperCase()}(${
-                            atomUtxos?.filter(
-                              (utxo) => utxo.atomicals[0] === o.atomical_id
-                            ).length
-                          })`}</span>
-                        </div>
-                        <span className="text-strong-color">{o.confirmed}</span>
+            {atomicals.atomicalFTs.map((o) => {
+              const data = findValueInDeepObject(o.mint_data?.fields, "$d");
+              const b64String = Buffer.from(data, "hex").toString("base64");
+              return (
+                <List.Item
+                  key={o.atomical_id}
+                  title={
+                    <div
+                      className="flex justify-between"
+                      onTouchEnd={(e) => {
+                        alert.close();
+                        e.stopPropagation();
+                        navigate(`/transation/ft?ticker=${o.$ticker}`);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <img
+                          src={`data:image/png;base64,${b64String}`}
+                          className="mr-2 h-5 overflow-hidden rounded-full"
+                          alt=""
+                        />
+                        <span className="text-strong-color">{`${o.$ticker}(${o.utxos.length})`}</span>
                       </div>
-                    }
-                    arrow={<div className="h-5"></div>}
-                  ></List.Item>
-                );
-              })}
+                      <span className="text-strong-color">{o.value}</span>
+                    </div>
+                  }
+                  arrow={<div className="h-5"></div>}
+                ></List.Item>
+              );
+            })}
           </List>
         </>
       ),
     });
   };
+  console.log("atomical", atomicals);
 
-  console.log("balance", balance);
-  console.log("atomUtxos", atomUtxos);
-  console.log("fundingBalance", fundingBalance);
-  console.log("nonAtomUtxos", nonAtomUtxos);
-  console.log("balanceMap", balanceMap);
-  console.log("allUtxos", allUtxos);
+  const tabs = [
+    {
+      title: "FT",
+      key: "1",
+      children: (
+        <>
+          <List>
+            <List.Item
+              key="1"
+              title={
+                <div className="flex justify-between text-strong-color">
+                  <div className="flex items-center">
+                    <img
+                      src={ICON_BTC}
+                      className="h-5 mr-2 rounded-full overflow-hidden"
+                      alt=""
+                    />
+                    BTC
+                  </div>
+                  <p className="text-strong-color flex items-center justify-center">
+                    {loading ? <DotLoading /> : <>{atomicals.regularsValue}</>}{" "}
+                    sats
+                  </p>
+                </div>
+              }
+              arrow={<div className="h-5"></div>}
+            ></List.Item>
+            {atomicals.atomicalFTs.map((o) => {
+              const data = findValueInDeepObject(o.mint_data?.fields, "$d");
+              const b64String = Buffer.from(data, "hex").toString("base64");
+              return (
+                <List.Item
+                  key={o.atomical_id}
+                  title={
+                    <div
+                      className="flex justify-between"
+                      onTouchEnd={(e) => {
+                        e.stopPropagation();
+                        navigate(`/transation/ft?ticker=${o.$ticker}`);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <img
+                          src={`data:image/png;base64,${b64String}`}
+                          className="mr-2 h-5 rounded-full overflow-hidden"
+                          alt=""
+                        />
+                        <span className="text-strong-color">{`${o.$ticker}(${o.utxos.length})`}</span>
+                      </div>
+                      <span className="text-strong-color">{o.value} sats</span>
+                    </div>
+                  }
+                  arrow={<div className="h-5"></div>}
+                ></List.Item>
+              );
+            })}
+          </List>
+        </>
+      ),
+    },
+    {
+      title: "NFT",
+      key: "2",
+      children: (
+        <div>
+          <div className="flex flex-wrap gap-2">
+            {atomicals.atomicalNFTs.map((o, index) => {
+              console.log("NFT item");
+              return (
+                <NFTCard
+                  onClick={() => {
+                    navigate(`/transation/nft?ticker=${o.$ticker}`);
+                  }}
+                  key={index}
+                  data={o}
+                />
+              );
+            })}
+          </div>
+        </div>
+      ),
+    },
+  ];
   return (
     <>
       <div className="app-container">
@@ -158,12 +214,7 @@ const IndexPage = () => {
                   <DotLoading />
                 ) : (
                   <>
-                    {balanceMap && fundingBalance
-                      ? Object.keys(balanceMap)
-                          .map((key) => balanceMap[key])
-                          .map((o) => o.confirmed)
-                          .reduce((pre, cur) => pre + cur, fundingBalance)
-                      : "--"}{" "}
+                    {atomicals.confirmedValue ? atomicals.confirmedValue : "--"}{" "}
                   </>
                 )}
                 sats
@@ -187,74 +238,26 @@ const IndexPage = () => {
         </div>
         <div className="app-body">
           <>
-            <h1 className="text-base mt-5 mb-2">Tokens</h1>
-            <List>
-              <List.Item
-                key="1"
-                title={
-                  <div className="flex justify-between text-strong-color">
-                    <div className="flex items-center">
-                      <img
-                        src={ICON_BTC}
-                        className="h-5 mr-2 rounded-full overflow-hidden"
-                        alt=""
-                      />
-                      BTC
-                    </div>
-                    <p className="text-strong-color flex items-center justify-center">
-                      {loading ? <DotLoading /> : <>{fundingBalance}</>} sats
-                    </p>
+            <div className="flex py-2">
+              {tabs.map((tab) => {
+                return (
+                  <div
+                    className={`px-2 border-b-2 ${
+                      tab.key === curTab
+                        ? "border-primary"
+                        : "border-transparent"
+                    }`}
+                    key={tab.key}
+                    onClick={() => {
+                      setCurTab(tab.key);
+                    }}
+                  >
+                    {tab.title}
                   </div>
-                }
-                arrow={<div className="h-5"></div>}
-              ></List.Item>
-              {balanceMap
-                .filter((v: IAtomicalBalanceItem) => {
-                  return v.type === "FT";
-                })
-                // //@ts-ignore
-                .map((o: IAtomicalBalanceItem) => {
-                  const data = findValueInDeepObject(
-                    o.data.mint_data?.fields,
-                    "$d"
-                  );
-                  const b64String = Buffer.from(data, "hex").toString("base64");
-                  return (
-                    <List.Item
-                      key={o.atomical_id}
-                      title={
-                        <div
-                          className="flex justify-between"
-                          onTouchEnd={(e) => {
-                            e.stopPropagation();
-                            navigate(
-                              `/transation?atomical_id=${o.atomical_id}`
-                            );
-                          }}
-                        >
-                          <div className="flex items-center">
-                            <img
-                              src={`data:image/png;base64,${b64String}`}
-                              className="mr-2 h-5 rounded-full overflow-hidden"
-                              alt=""
-                            />
-                            <span className="text-strong-color">{`${o.ticker.toLocaleUpperCase()}(${
-                              atomUtxos?.filter(
-                                (utxo) => utxo.atomicals[0] === o.atomical_id
-                              ).length
-                            })`}</span>
-                          </div>
-                          <span className="text-strong-color">
-                            {o.confirmed} sats
-                          </span>
-                        </div>
-                      }
-                      arrow={<div className="h-5"></div>}
-                    ></List.Item>
-                  );
-                })}
-            </List>
-            <div className="h-10"></div>
+                );
+              })}
+            </div>
+            {tabs.find((o) => o.key === curTab)?.children}
           </>
         </div>
       </div>

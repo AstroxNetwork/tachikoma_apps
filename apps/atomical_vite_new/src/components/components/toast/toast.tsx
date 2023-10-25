@@ -1,38 +1,38 @@
-import React, { ReactNode, useMemo } from 'react'
-import classNames from 'classnames'
-import Mask from '../mask'
-import type { MaskProps } from '../mask'
-import { PropagationEvent } from '../../utils/with-stop-propagation'
-import { GetContainer } from '../../utils/get-render-container'
-import { mergeProps } from '../../utils/merge-props'
+import React, { ReactNode, useMemo } from "react";
+import classNames from "classnames";
+import Mask from "../mask";
+import type { MaskProps } from "../mask";
+import { PropagationEvent } from "../utils/with-stop-propagation";
+import { GetContainer } from "../utils/get-render-container";
+import { mergeProps } from "../utils/merge-props";
 
-const classPrefix = `rc-toast`
+const classPrefix = `rc-toast`;
 
 export interface ToastProps {
-  afterClose?: () => void
-  maskStyle?: MaskProps['style']
-  maskClassName?: string
-  maskClickable?: boolean
-  content?: ReactNode
-  icon?: 'success' | 'fail' | 'loading' | React.ReactNode
-  duration?: number
-  position?: 'top' | 'bottom' | 'center'
-  visible?: boolean
-  getContainer?: GetContainer
-  stopPropagation?: PropagationEvent[]
+  afterClose?: () => void;
+  maskStyle?: MaskProps["style"];
+  maskClassName?: string;
+  maskClickable?: boolean;
+  content?: ReactNode;
+  icon?: "success" | "fail" | "loading" | React.ReactNode;
+  duration?: number;
+  position?: "top" | "bottom" | "center";
+  visible?: boolean;
+  getContainer?: GetContainer;
+  stopPropagation?: PropagationEvent[];
 }
 
 const defaultProps = {
   maskClickable: true,
-  stopPropagation: ['click'],
-}
+  stopPropagation: ["click"],
+};
 
-export const Toast: React.FC<ToastProps> = p => {
-  const props = mergeProps(defaultProps, p)
-  const { maskClickable, content, icon, position } = props
+export const Toast: React.FC<ToastProps> = (p) => {
+  const props = mergeProps(defaultProps, p);
+  const { maskClickable, content, icon, position } = props;
 
   const iconElement = useMemo(() => {
-    if (icon === null || icon === undefined) return null
+    if (icon === null || icon === undefined) return null;
     // switch (icon) {
     //   case 'success':
     //     return <CheckOutline />
@@ -45,18 +45,18 @@ export const Toast: React.FC<ToastProps> = p => {
     //   default:
     //     return icon
     // }
-  }, [icon])
+  }, [icon]);
 
   const top = useMemo(() => {
     switch (position) {
-      case 'top':
-        return '20%'
-      case 'bottom':
-        return '80%'
+      case "top":
+        return "20%";
+      case "bottom":
+        return "80%";
       default:
-        return '50%'
+        return "50%";
     }
-  }, [position])
+  }, [position]);
   return (
     <Mask
       visible={props.visible}
@@ -66,7 +66,7 @@ export const Toast: React.FC<ToastProps> = p => {
       getContainer={props.getContainer}
       afterClose={props.afterClose}
       style={{
-        pointerEvents: maskClickable ? 'none' : 'auto',
+        pointerEvents: maskClickable ? "none" : "auto",
         ...props.maskStyle,
       }}
       className={classNames(`${classPrefix}-mask`, props.maskClassName)}
@@ -87,5 +87,5 @@ export const Toast: React.FC<ToastProps> = p => {
         </div>
       </div>
     </Mask>
-  )
-}
+  );
+};

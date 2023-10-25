@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { NativeProps } from "@/components/utils/native-props";
+import { NativeProps } from "@/components/components/utils/native-props";
 import "./input.less";
 type NativeInputProps = React.DetailedHTMLProps<
   React.InputHTMLAttributes<HTMLInputElement>,

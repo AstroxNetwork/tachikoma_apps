@@ -1,8 +1,8 @@
 import React, { FC, ReactNode } from "react";
-import { NativeProps, withNativeProps } from "../../utils/native-props";
+import { NativeProps, withNativeProps } from "../utils/native-props";
 import { RightOutline } from "antd-mobile-icons";
 import classNames from "classnames";
-import { isNodeWithContent } from "../../utils/is-node-with-content";
+import { isNodeWithContent } from "../utils/is-node-with-content";
 
 const classPrefix = `rc-list-item`;
 
