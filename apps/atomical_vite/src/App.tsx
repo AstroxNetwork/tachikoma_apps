@@ -92,8 +92,20 @@ function App() {
             confirmedUtxos.push(_allUtxos.utxos[i]);
           }
         }
-        const ordUtxosResoponse = await provider.getInscriptions(address);
-        const { list: ordList, total } = ordUtxosResoponse;
+        let hasMore = true;
+        const ordList = [];
+        let cursor = 0;
+        const size = 100;
+        let total = 0;
+        while (hasMore) {
+            const v = await provider.getInscriptions(cursor, size);
+            if (total == 0) {
+                total = v.total;
+            }
+            ordList.push(...(v?.list || []));
+            cursor += size;
+            hasMore = ordList.length < v.total;
+        }
 
         let mempoolBalance = 0;
         for (let i = 0; i < mempoolUtxos.length; i += 1) {
