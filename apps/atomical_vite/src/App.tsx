@@ -22,7 +22,7 @@ export function handleAddress(address: string, padding: number = 6): string {
 }
 
 const ELECTRUMX_WSS = 'wss://electrumx.atomicals.xyz:50012';
-const ELECTRUMX_HTTP_PROXY = 'https://ep.atomicals.xyz/proxy';
+const ELECTRUMX_HTTP_PROXY = 'https://ep.atomicalswallet.com/proxy';
 function App() {
   const [originAddress, setOriginAddress] = useState<string | undefined>(undefined); // 'bc1qpgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'
   const [address, setAddress] = useState<string | undefined>(undefined);
