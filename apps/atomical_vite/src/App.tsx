@@ -1,50 +1,74 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
-import './App.css';
-import { ElectrumApi } from './clients/eletrum';
-import { AtomicalService } from './services/atomical';
-import { IAtomicalBalances, ISelectedUtxo } from './interfaces/api';
-import Modal from './components/Modal';
-import { AstroXWizzInhouseProvider } from 'webf_wizz_inhouse';
-import { fromPubToP2tr, toXOnly } from './clients/utils';
-import { showToast } from '@uni/toast';
-import { Transfer } from './Transfer';
-import { Overlay, Popup } from 'react-vant';
-import { UTXO } from './interfaces/utxo';
-import { MempoolUtxo, mempoolService } from './clients/mempool';
-import { ElectrumProxyProvider } from './clients/proxyProvider';
+import "./App.css";
+import { ElectrumApi } from "./clients/eletrum";
+import { AtomicalService } from "./services/atomical";
+import { IAtomicalBalances, ISelectedUtxo } from "./interfaces/api";
+import Modal from "./components/Modal";
+import { AstroXWizzInhouseProvider } from "webf_wizz_inhouse";
+import { fromPubToP2tr, toXOnly } from "./clients/utils";
+import { showToast } from "@uni/toast";
+import { Transfer } from "./Transfer";
+import { Overlay, Popup } from "react-vant";
+import { UTXO } from "./interfaces/utxo";
+import { MempoolUtxo, mempoolService } from "./clients/mempool";
+import { ElectrumProxyProvider } from "./clients/proxyProvider";
 
 const provider = new AstroXWizzInhouseProvider();
 
 export function handleAddress(address: string, padding: number = 6): string {
-  return `${address.substring(0, padding)}...${address.substring(address.length - padding, address.length)}`;
+  return `${address.substring(0, padding)}...${address.substring(
+    address.length - padding,
+    address.length
+  )}`;
 }
 
-const ELECTRUMX_WSS = 'wss://electrumx.atomicals.xyz:50012';
-const ELECTRUMX_HTTP_PROXY = 'https://ep.atomicalswallet.com/proxy';
+const ELECTRUMX_WSS = "wss://electrumx.atomicals.xyz:50012";
+const ELECTRUMX_HTTP_PROXY = "https://ep.atomicalswallet.com/proxy";
 function App() {
-  const [originAddress, setOriginAddress] = useState<string | undefined>(undefined); // 'bc1qpgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'
+  const [originAddress, setOriginAddress] = useState<string | undefined>(
+    undefined
+  ); // 'bc1qpgvdp7lf89d62zadds5jvyjntxmr7v70yv33g7vqaeu2p0cuexveq9hcwdv'
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [balance, setBalance] = useState<number | undefined>(undefined);
-  const [fundingBalance, setFundingBalance] = useState<number | undefined>(undefined);
+  const [fundingBalance, setFundingBalance] = useState<number | undefined>(
+    undefined
+  );
   const [nonAtomUtxos, setNonAtomUtxos] = useState<UTXO[]>([]);
-  const [balanceMap, setBalanceMap] = useState<IAtomicalBalances | undefined>(undefined);
+  const [balanceMap, setBalanceMap] = useState<IAtomicalBalances | undefined>(
+    undefined
+  );
   const [visible, setVisible] = useState(false);
-  const [modalContent, setModalContent] = useState<JSX.Element | string | undefined>(undefined);
+  const [modalContent, setModalContent] = useState<
+    JSX.Element | string | undefined
+  >(undefined);
   const [allUtxos, setAllUxtos] = useState<UTXO[]>([]);
   const [atomUtxos, setAtomUtxos] = useState<ISelectedUtxo[]>([]);
   const [relatedUtxos, setRelatedUtxos] = useState<ISelectedUtxo[]>([]);
-  const [relatedAtomicalId, setRelatedAtomicalId] = useState<string | undefined>(undefined);
-  const [relatedConfirmed, setRelatedConfirmed] = useState<number | undefined>(undefined);
-  const [relatedType, setRelatedType] = useState<'FT' | 'NFT' | undefined>(undefined);
-  const [relatedTicker, setRelatedTicker] = useState<string | undefined>(undefined);
+  const [relatedAtomicalId, setRelatedAtomicalId] = useState<
+    string | undefined
+  >(undefined);
+  const [relatedConfirmed, setRelatedConfirmed] = useState<number | undefined>(
+    undefined
+  );
+  const [relatedType, setRelatedType] = useState<"FT" | "NFT" | undefined>(
+    undefined
+  );
+  const [relatedTicker, setRelatedTicker] = useState<string | undefined>(
+    undefined
+  );
   const [xOnlyPubHex, setXonlyPubHex] = useState<string | undefined>(undefined);
-  const [isAllowedAddressType, setIsAllowedAddressType] = useState<boolean>(true);
+  const [isAllowedAddressType, setIsAllowedAddressType] =
+    useState<boolean>(true);
   const [modalClosable, setModalClosable] = useState<boolean>(true);
-  const [originAddressType, setOriginAddressType] = useState<string | undefined>(undefined);
+  const [originAddressType, setOriginAddressType] = useState<
+    string | undefined
+  >(undefined);
 
-  const [service, setService] = useState<AtomicalService | undefined>(undefined);
+  const [service, setService] = useState<AtomicalService | undefined>(
+    undefined
+  );
 
   const init = () => {
     try {
@@ -52,8 +76,8 @@ function App() {
       const service = new AtomicalService(api);
       setService(service);
     } catch (error) {
-      console.log('get service error');
-      showToast({ content: `${error}`, type: 'fail' });
+      console.log("get service error");
+      showToast({ content: `${error}`, type: "fail" });
     }
   };
 
@@ -62,10 +86,11 @@ function App() {
 
     if (address) {
       try {
-        showToast({ content: 'Connecting Service', type: 'loading' });
+        showToast({ content: "Connecting Service", type: "loading" });
         const walletInfo = await service.walletInfo(address, false);
         const { data } = walletInfo;
-        const { atomicals_confirmed, atomicals_balances, atomicals_utxos } = data;
+        const { atomicals_confirmed, atomicals_balances, atomicals_utxos } =
+          data;
         if (atomicals_utxos.length > 0) {
           setAtomUtxos(atomicals_utxos);
         }
@@ -74,20 +99,26 @@ function App() {
 
         setBalanceMap(atomicals_balances as IAtomicalBalances);
         let ftBalance = 0;
-        Object.keys(atomicals_balances as IAtomicalBalances).map(e => {
+        Object.keys(atomicals_balances as IAtomicalBalances).map((e) => {
           const atom = (atomicals_balances as IAtomicalBalances)[e];
-          if (atom.type === 'FT') {
+          if (atom.type === "FT") {
             ftBalance += atom.confirmed;
           }
         });
         setBalance(ftBalance);
 
         const _allUtxos = await service.electrumApi.getUnspentAddress(address);
-        const mempoolUtxos: MempoolUtxo[] = await mempoolService.getUtxo(address);
+        const mempoolUtxos: MempoolUtxo[] = await mempoolService.getUtxo(
+          address
+        );
 
         const confirmedUtxos: UTXO[] = [];
         for (let i = 0; i < _allUtxos.utxos.length; i++) {
-          const found = mempoolUtxos.findIndex(item => item.txid === _allUtxos.utxos[i].txid && item.status.confirmed === true);
+          const found = mempoolUtxos.findIndex(
+            (item) =>
+              item.txid === _allUtxos.utxos[i].txid &&
+              item.status.confirmed === true
+          );
           if (found > -1) {
             confirmedUtxos.push(_allUtxos.utxos[i]);
           }
@@ -98,13 +129,13 @@ function App() {
         const size = 100;
         let total = 0;
         while (hasMore) {
-            const v = await provider.getInscriptions(cursor, size);
-            if (total == 0) {
-                total = v.total;
-            }
-            ordList.push(...(v?.list || []));
-            cursor += size;
-            hasMore = ordList.length < v.total;
+          const v = await provider.getInscriptions(address, cursor, size);
+          if (total == 0) {
+            total = v.total;
+          }
+          ordList.push(...(v?.list || []));
+          cursor += size;
+          hasMore = ordList.length < v.total;
         }
 
         let mempoolBalance = 0;
@@ -126,7 +157,9 @@ function App() {
         if (total === 0 || total === undefined) {
           for (let i = 0; i < confirmedUtxos.length; i++) {
             const utxo = confirmedUtxos[i];
-            if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
+            if (
+              atomicals_utxos.findIndex((item) => item.txid === utxo.txid) < 0
+            ) {
               nonAtomUtxos.push(utxo);
               nonAtomUtxosValue += utxo.value;
             }
@@ -134,14 +167,20 @@ function App() {
         } else {
           for (let i = 0; i < confirmedUtxos.length; i++) {
             const utxo = confirmedUtxos[i];
-            if (atomicals_utxos.findIndex(item => item.txid === utxo.txid) < 0) {
+            if (
+              atomicals_utxos.findIndex((item) => item.txid === utxo.txid) < 0
+            ) {
               _nonAtomUtxos.push(utxo);
             }
           }
 
           for (let j = 0; j < _nonAtomUtxos.length; j++) {
             const utxo = _nonAtomUtxos[j];
-            if (ordList.findIndex(item => item.output.split(':')[0] === utxo.txId) < 0) {
+            if (
+              ordList.findIndex(
+                (item) => item.output.split(":")[0] === utxo.txId
+              ) < 0
+            ) {
               nonAtomUtxos.push(utxo);
               nonAtomUtxosValue += utxo.value;
             }
@@ -183,7 +222,9 @@ function App() {
     const accs = await provider.requestAccounts();
     const p2trPub = await provider.getPublicKey(accs[0]);
     setOriginAddress(accs[0]);
-    const xpub = (toXOnly(Buffer.from(p2trPub, 'hex')) as Buffer).toString('hex');
+    const xpub = (toXOnly(Buffer.from(p2trPub, "hex")) as Buffer).toString(
+      "hex"
+    );
     setXonlyPubHex(xpub);
     // setXonlyPubHex('133c85d348d6c0796382966380719397453592e706cd3329119a2d2cb8d2ff7b');
     const p2trAddress = fromPubToP2tr(p2trPub);
@@ -192,45 +233,69 @@ function App() {
     setAddress(p2trAddress);
     setOriginAddressType(currentAddressType);
 
-    if (currentAddressType === 'p2pkh') {
+    if (currentAddressType === "p2pkh") {
       setIsAllowedAddressType(true);
     } else {
-      if (currentAddressType === 'p2wpkh' || currentAddressType === 'p2sh') {
+      if (currentAddressType === "p2wpkh" || currentAddressType === "p2sh") {
         setModalClosable(false);
         setVisible(true);
         setIsAllowedAddressType(false);
         setModalContent(
-          <div style={{ textAlign: 'left' }}>
-            <p style={{ textAlign: 'left' }}>
-              <span style={{ display: 'inline-block' }}>Please aware this address you use to login is</span>
-              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}NOT supported</span>
-              <span style={{ display: 'inline-block' }}>{` `}Please use</span>
+          <div style={{ textAlign: "left" }}>
+            <p style={{ textAlign: "left" }}>
+              <span style={{ display: "inline-block" }}>
+                Please aware this address you use to login is
+              </span>
+              <span style={{ display: "inline-block", color: "#ff3399" }}>
+                {` `}NOT supported
+              </span>
+              <span style={{ display: "inline-block" }}>{` `}Please use</span>
             </p>
-            <p style={{ textAlign: 'left', color: '#ff9933' }}>Legacy or P2TR</p>
-            <p style={{ textAlign: 'left' }}>
-              <span style={{ display: 'inline-block' }}>Meanwhile,</span>
-              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}DO NOT</span>
-              <span style={{ display: 'inline-block' }}>{` `}mix other assets in your wallet.</span>
+            <p style={{ textAlign: "left", color: "#ff9933" }}>
+              Legacy or P2TR
             </p>
-          </div>,
+            <p style={{ textAlign: "left" }}>
+              <span style={{ display: "inline-block" }}>Meanwhile,</span>
+              <span style={{ display: "inline-block", color: "#ff3399" }}>
+                {` `}DO NOT
+              </span>
+              <span style={{ display: "inline-block" }}>
+                {` `}mix other assets in your wallet.
+              </span>
+            </p>
+          </div>
         );
       } else {
         setVisible(true);
         setIsAllowedAddressType(false);
         setModalContent(
-          <div style={{ textAlign: 'left' }}>
-            <p style={{ textAlign: 'left' }}>
-              <span style={{ display: 'inline-block' }}>Please ensure that this address is used</span>
-              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}EXCLUSIVELY FOR ARC-20</span>
-              <span style={{ display: 'inline-block' }}>{` `}assets and is not mixed with other assets such as</span>
+          <div style={{ textAlign: "left" }}>
+            <p style={{ textAlign: "left" }}>
+              <span style={{ display: "inline-block" }}>
+                Please ensure that this address is used
+              </span>
+              <span style={{ display: "inline-block", color: "#ff3399" }}>
+                {` `}EXCLUSIVELY FOR ARC-20
+              </span>
+              <span style={{ display: "inline-block" }}>
+                {` `}assets and is not mixed with other assets such as
+              </span>
             </p>
-            <p style={{ textAlign: 'left', color: '#ff9933' }}>BRC20 or Inscriptions.</p>
-            <p style={{ textAlign: 'left' }}>
-              <span style={{ display: 'inline-block' }}>Otherwise, there is a risk of your assets being</span>
-              <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}LOST</span>
-              <span style={{ display: 'inline-block' }}>{` `}during the transfer.</span>
+            <p style={{ textAlign: "left", color: "#ff9933" }}>
+              BRC20 or Inscriptions.
             </p>
-          </div>,
+            <p style={{ textAlign: "left" }}>
+              <span style={{ display: "inline-block" }}>
+                Otherwise, there is a risk of your assets being
+              </span>
+              <span style={{ display: "inline-block", color: "#ff3399" }}>
+                {` `}LOST
+              </span>
+              <span style={{ display: "inline-block" }}>
+                {` `}during the transfer.
+              </span>
+            </p>
+          </div>
         );
       }
     }
@@ -245,8 +310,8 @@ function App() {
           await getWalletInfo();
         } catch (error) {
           // await service.close();
-          console.log('get wallet info error + ', error);
-          showToast({ content: `${error}`, type: 'fail' });
+          console.log("get wallet info error + ", error);
+          showToast({ content: `${error}`, type: "fail" });
         }
       })();
     } else {
@@ -255,8 +320,8 @@ function App() {
           try {
             await getAddress();
           } catch (error) {
-            console.log('get address error');
-            showToast({ content: `${error}`, type: 'fail' });
+            console.log("get address error");
+            showToast({ content: `${error}`, type: "fail" });
           }
           // await service.ensureService();
         })();
@@ -269,21 +334,21 @@ function App() {
   const handleBalanceMap = () => {
     if (balanceMap) {
       return Object.values(balanceMap)
-        .filter(v => {
-          return v.type === 'FT';
+        .filter((v) => {
+          return v.type === "FT";
         })
-        .map(data => {
+        .map((data) => {
           return (
             <div
               style={{
                 padding: 16,
                 // backgroundColor: '#000',
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                display: 'flex',
-                borderBottom: '1px solid #e5e7eb',
-                color: '#fff',
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                display: "flex",
+                borderBottom: "1px solid #e5e7eb",
+                color: "#fff",
                 fontSize: 18,
               }}
               onTouchEnd={() => {
@@ -310,60 +375,86 @@ function App() {
 
   return (
     <>
-      <div style={{ minWidth: 320, width: '100%' }}>
+      <div style={{ minWidth: 320, width: "100%" }}>
         <section
           style={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'stretch',
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "stretch",
             paddingTop: 32,
             paddingBottom: 32,
             flex: 1,
           }}
         >
-          <img src="./icon.png" style={{ width: 48, height: 48, borderRadius: 24 }} />
+          <img
+            src="./icon.png"
+            style={{ width: 48, height: 48, borderRadius: 24 }}
+          />
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "flex-end",
+              alignItems: "center",
               flex: 1,
             }}
           >
             <div
-              style={{ padding: 16, borderRadius: 16, backgroundColor: '#000', marginRight: 16 }}
+              style={{
+                padding: 16,
+                borderRadius: 16,
+                backgroundColor: "#000",
+                marginRight: 16,
+              }}
               onTouchEnd={() => {
-                if (address && address !== '') {
+                if (address && address !== "") {
                   setVisible(true);
                   setIsAllowedAddressType(false);
                   setModalContent(
-                    <div style={{ textAlign: 'left' }}>
-                      <p style={{ textAlign: 'left' }}>
-                        <span style={{ display: 'inline-block' }}>Please make sure this address is</span>
-                        <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}NOT</span>
-                        <span style={{ display: 'inline-block' }}>{` `}mixed with other assets, for examples:</span>
+                    <div style={{ textAlign: "left" }}>
+                      <p style={{ textAlign: "left" }}>
+                        <span style={{ display: "inline-block" }}>
+                          Please make sure this address is
+                        </span>
+                        <span
+                          style={{ display: "inline-block", color: "#ff3399" }}
+                        >
+                          {` `}NOT
+                        </span>
+                        <span style={{ display: "inline-block" }}>
+                          {` `}mixed with other assets, for examples:
+                        </span>
                       </p>
-                      <p style={{ textAlign: 'left', color: '#ff9933' }}>BRC20, Inscriptions</p>
-                      <p style={{ textAlign: 'left' }}>
-                        <span style={{ display: 'inline-block' }}>Otherwise your assets might be</span>
-                        <span style={{ display: 'inline-block', color: '#ff3399' }}>{` `}LOST</span>
-                        <span style={{ display: 'inline-block' }}>{` `}during transfer</span>
+                      <p style={{ textAlign: "left", color: "#ff9933" }}>
+                        BRC20, Inscriptions
                       </p>
-                    </div>,
+                      <p style={{ textAlign: "left" }}>
+                        <span style={{ display: "inline-block" }}>
+                          Otherwise your assets might be
+                        </span>
+                        <span
+                          style={{ display: "inline-block", color: "#ff3399" }}
+                        >
+                          {` `}LOST
+                        </span>
+                        <span style={{ display: "inline-block" }}>
+                          {` `}during transfer
+                        </span>
+                      </p>
+                    </div>
                   );
                   window.navigator.clipboard.writeText(address);
-                  showToast({ content: 'Copy Success', type: 'success' });
+                  showToast({ content: "Copy Success", type: "success" });
                 }
               }}
             >
-              {address ? handleAddress(address) : '...'}
+              {address ? handleAddress(address) : "..."}
             </div>
             <div
-              style={{ padding: 16, borderRadius: 16, backgroundColor: '#000' }}
+              style={{ padding: 16, borderRadius: 16, backgroundColor: "#000" }}
               onTouchEnd={() => {
-                showToast({ content: 'NFT/Domains Soon', type: 'success' });
+                showToast({ content: "NFT/Domains Soon", type: "success" });
               }}
             >
               Tokens
@@ -373,7 +464,7 @@ function App() {
         <section>
           <div
             style={{
-              color: '#fff',
+              color: "#fff",
               fontSize: 24,
               fontFamily:
                 'EuclidCircularB,Inter var,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji',
@@ -384,16 +475,16 @@ function App() {
               style={{
                 fontSize: 24,
                 marginLeft: 16,
-                display: 'inline-block',
+                display: "inline-block",
               }}
               onTouchEnd={async () => {
                 try {
                   await getWalletInfo();
-                  showToast({ content: 'Balance Updated', type: 'success' });
+                  showToast({ content: "Balance Updated", type: "success" });
                 } catch (error) {
                   console.log(error);
                   // await service.close();
-                  showToast({ content: `${error}`, type: 'fail' });
+                  showToast({ content: `${error}`, type: "fail" });
                 }
               }}
             >{`🚀`}</span>
@@ -401,18 +492,18 @@ function App() {
 
           <div
             style={{
-              color: '#fff',
+              color: "#fff",
               fontSize: 64,
               padding: 32,
               fontFamily:
                 'EuclidCircularB,Inter var,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji',
             }}
           >
-            {balance ?? '---'}
+            {balance ?? "---"}
           </div>
           <div
             style={{
-              color: '#fff',
+              color: "#fff",
               fontSize: 16,
               fontFamily:
                 'EuclidCircularB,Inter var,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji',
@@ -422,20 +513,20 @@ function App() {
           </div>
           <div
             style={{
-              color: '#f6f6f6',
+              color: "#f6f6f6",
               fontSize: 18,
               padding: 8,
               fontFamily:
                 'EuclidCircularB,Inter var,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji',
             }}
           >
-            {fundingBalance ?? '---'} sats
+            {fundingBalance ?? "---"} sats
           </div>
         </section>
 
         <section
           style={{
-            backgroundColor: '#1e1f25',
+            backgroundColor: "#1e1f25",
             padding: 32,
             borderRadius: 16,
             marginTop: 32,
@@ -447,42 +538,42 @@ function App() {
       <Modal
         visible={visible}
         onHide={() => {
-          console.log('hide');
+          console.log("hide");
           setRelatedUtxos([]);
           setRelatedAtomicalId(undefined);
           setRelatedConfirmed(undefined);
         }}
         onShow={() => {
-          console.log('show');
+          console.log("show");
           console.log({ relatedUtxos });
         }}
         onMaskClick={() => {
           // setVisible(false);
         }}
         contentStyle={{
-          position: 'absolute',
+          position: "absolute",
           // top: '150rpx',
           // left: '0',
           // minWidth: '100%',
-          minWidth: '300rpx',
+          minWidth: "300rpx",
           padding: 0,
-          color: '#000',
-          left: '50%',
-          bottom: '0%',
-          height: '1200rpx',
+          color: "#000",
+          left: "50%",
+          bottom: "0%",
+          height: "1200rpx",
           transform: `translate(-50%,0%)`,
-          backgroundColor: '#242424',
+          backgroundColor: "#242424",
         }}
       >
         <div
           style={{
-            display: 'flex',
+            display: "flex",
             flex: 1,
-            color: '#fff',
-            textAlign: 'center',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '32rpx',
+            color: "#fff",
+            textAlign: "center",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "32rpx",
           }}
         >
           {isAllowedAddressType && relatedAtomicalId ? (
@@ -507,10 +598,10 @@ function App() {
           ) : (
             <div
               style={{
-                alignItems: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
+                alignItems: "center",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
               }}
             >
               <div
@@ -524,9 +615,9 @@ function App() {
               {modalClosable ? (
                 <div
                   style={{
-                    backgroundColor: '#3399ff',
-                    color: '#fff',
-                    padding: '30px 40px',
+                    backgroundColor: "#3399ff",
+                    color: "#fff",
+                    padding: "30px 40px",
                     maxWidth: 400,
                   }}
                   onTouchStart={() => {
