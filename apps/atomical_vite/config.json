@@ -1,10 +1,16 @@
 {
   "name": "atom_wallet_bundle",
   "bundle": "com.astrox.atom_wallet_bundle",
-  "version": "1.0.0+27",
-  "localized_name": {
-    "en": "atom wallet test",
-    "zh": "atom wallet 测试版"
+  "version": "1.0.0+28",
+  "app_name": {
+    "en": "Transfer Atom",
+    "ja": "Atomの送金",
+    "zh": "发送 Atom"
+  },
+  "app_description": {
+    "en": "The simplest way to send ARC-20",
+    "ja": "ARC-20を送信する最も簡単な方法",
+    "zh": "支持发送及接收 ARC-20"
   },
   "icon": "icon.png",
   "entrypoint": "index",
